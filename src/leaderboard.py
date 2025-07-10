@@ -2,12 +2,17 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-def leaderboard_dashboard(ipl):
+def leaderboard_dashboard(ipl, season=None):
     st.markdown("## 🏆 IPL Leaderboard Dashboard")
 
-    # 🎯 Season-wise filtering
+    # 🎯 Season filtering
     available_seasons = sorted(ipl["Season"].dropna().unique())
-    selected_season = st.selectbox("📅 Select Season", available_seasons)
+
+    # If season is passed (from agent), use it — else show selector
+    if season and season in available_seasons:
+        selected_season = season
+    else:
+        selected_season = st.selectbox("📅 Select Season", available_seasons)
 
     # Filter data for selected season
     season_df = ipl[ipl["Season"] == selected_season]
