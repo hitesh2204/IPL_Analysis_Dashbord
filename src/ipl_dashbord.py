@@ -6,9 +6,10 @@ from src.data_loader import load_ipl_data
 from src.plots import plot_run_distribution, plot_ball_timeline
 from src.leaderboard import leaderboard_dashboard
 from src.player_summary import player_summary_page
-from src.team_vs_team import team_vs_team_analysis
+from src.team_vs_team import team_vs_team_page
 from src.player_comparison import player_detailed_comparison
-from src.venue_Analysis import venue_advanced_stats
+from src.venue_analysis import venue_analysis_page
+from Chatbot.genai_chat import genai_chat_tab
 import matplotlib.pyplot as plt
 
 import os
@@ -160,7 +161,7 @@ class IPLDashboard:
 
     def run(self):
         st.sidebar.header(":green[IPL]-:red[Menu]", divider='rainbow')
-        option = st.sidebar.selectbox("Select Analysis", ['🏠-Overall IPL Analysis', '🧢-Team analysis', '⚔️-Player vs Bowler Duel','🏆-Leaderboard',"📊 Player Career Summary","🏏-Team vs Team Analysis","📜-Tournament Summary","📈-Player Comparison","🏟️-Venue Insights"])
+        option = st.sidebar.selectbox("Select Analysis", ['🏠-Overall IPL Analysis', '🧢-Team analysis', '⚔️-Player vs Bowler Duel','🏆-Leaderboard',"📊 Player Career Summary","🏏-Team vs Team Analysis","📜-Tournament Summary","📈-Player Comparison","🏟️-Venue Insights","🤖-Ask GenAI"])
 
         if option == '🏠-Overall IPL Analysis':
             if st.sidebar.button("Show Overview"):
@@ -188,7 +189,7 @@ class IPLDashboard:
             team2 = st.sidebar.selectbox("Select Team 2", [t for t in team_list if t != team1])
 
             if st.sidebar.button("Show Matchup Analysis"):
-                team_vs_team_analysis(self.ipl, team1, team2)
+                team_vs_team_page(self.ipl, team1, team2)
 
         elif option == '📜-Tournament Summary':
             from src.tournament_summary import tournament_summary_page
@@ -198,7 +199,10 @@ class IPLDashboard:
             player_detailed_comparison(self.ipl)
 
         elif option == "🏟️-Venue Insights":
-            venue_advanced_stats(self.ipl)  # No need to pass venue anymore
+            venue_analysis_page(self.ipl)  # No need to pass venue anymore
+
+        elif option == "🤖-Ask GenAI":
+            genai_chat_tab()
 
 
 

@@ -2,16 +2,19 @@ import streamlit as st
 import pandas as pd
 from src.utils import get_image_path
 
-def player_detailed_comparison(ipl):
+def player_detailed_comparison(ipl, bat1=None, bat2=None, bowl1=None, bowl2=None):
     st.header("⚖️ Player Career Comparison", divider='rainbow')
-
     tab1, tab2 = st.tabs(["🧢 Batsman Comparison", "🎯 Bowler Comparison"])
 
     # ---------------------- 🧢 Batsman Comparison --------------------------
     with tab1:
         col1, col2 = st.columns(2)
-        p1 = col1.selectbox("Select Batsman 1", sorted(ipl['batter'].unique()), key="bat1")
-        p2 = col2.selectbox("Select Batsman 2", sorted(ipl['batter'].unique()), key="bat2")
+        p1 = bat1 if bat1 else col1.selectbox("Select Batsman 1", sorted(ipl['batter'].unique()), key="bat1")
+        p2 = bat2 if bat2 else col2.selectbox("Select Batsman 2", sorted(ipl['batter'].unique()), key="bat2")
+
+        if p1 == p2:
+            st.warning("Please select two different batsmen.")
+            return
 
         df1 = ipl[ipl['batter'] == p1]
         df2 = ipl[ipl['batter'] == p2]
@@ -42,7 +45,6 @@ def player_detailed_comparison(ipl):
 
         st.markdown("### 📊 Batsman Stats Side-by-Side")
         c1, c2 = st.columns(2)
-
         for col, stats in zip([c1, c2], [stats1, stats2]):
             with col:
                 img_path = get_image_path(stats["player"])
@@ -59,8 +61,12 @@ def player_detailed_comparison(ipl):
     # ---------------------- 🎯 Bowler Comparison --------------------------
     with tab2:
         col1, col2 = st.columns(2)
-        p1 = col1.selectbox("Select Bowler 1", sorted(ipl['bowler'].unique()), key="bowl1")
-        p2 = col2.selectbox("Select Bowler 2", sorted(ipl['bowler'].unique()), key="bowl2")
+        p1 = bowl1 if bowl1 else col1.selectbox("Select Bowler 1", sorted(ipl['bowler'].unique()), key="bowl1")
+        p2 = bowl2 if bowl2 else col2.selectbox("Select Bowler 2", sorted(ipl['bowler'].unique()), key="bowl2")
+
+        if p1 == p2:
+            st.warning("Please select two different bowlers.")
+            return
 
         df1 = ipl[ipl['bowler'] == p1]
         df2 = ipl[ipl['bowler'] == p2]
@@ -70,9 +76,8 @@ def player_detailed_comparison(ipl):
             balls = df['ballnumber'].count()
             overs = balls / 6
             runs_conceded = df['batsman_run'].sum()
-            wickets = df[df['isWicketDelivery'] == 1].shape[0]  # ✅ Corrected total wickets
+            wickets = df[df['isWicketDelivery'] == 1].shape[0]
             economy = (runs_conceded / overs) if overs > 0 else 0
-
             five_wkts = df[df['isWicketDelivery'] == 1].groupby('ID').size()
             five_wkts = five_wkts[five_wkts >= 5].count()
 
@@ -90,15 +95,13 @@ def player_detailed_comparison(ipl):
 
         st.markdown("### 📊 Bowler Stats Side-by-Side")
         c1, c2 = st.columns(2)
-
         for col, stats in zip([c1, c2], [stats1, stats2]):
             with col:
-             img_path = get_image_path(stats["player"])
-             if img_path:
-                st.image(img_path, width=120, caption=stats["player"])
+                img_path = get_image_path(stats["player"])
+                if img_path:
+                    st.image(img_path, width=120, caption=stats["player"])
                 st.metric("Matches", stats["innings"])
                 st.metric("Overs", stats["overs"])
-                st.metric("Wickets", stats["wickets"])  # ✅ Now shows correctly
+                st.metric("Wickets", stats["wickets"])
                 st.metric("Economy", stats["economy"])
                 st.metric("5 Wicket Hauls", stats["5w_hauls"])
-
