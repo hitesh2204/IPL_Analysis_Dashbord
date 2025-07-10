@@ -5,3 +5,6 @@ seaborn
 streamlit
 altair
 pillow
+langchain
+huggingface_hub
+langchain_community
