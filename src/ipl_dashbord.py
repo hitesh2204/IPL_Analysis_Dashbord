@@ -6,13 +6,20 @@ from src.data_loader import load_ipl_data
 from src.plots import plot_run_distribution, plot_ball_timeline
 from src.leaderboard import leaderboard_dashboard
 from src.player_summary import player_summary_page
-from src.team_vs_team import team_vs_team_page
 from src.player_comparison import player_detailed_comparison
 from src.venue_analysis import venue_analysis_page
 from Chatbot.genai_chat import genai_chat_tab
+from src.team_vs_team import team_vs_team_analysis
 import matplotlib.pyplot as plt
 
 import os
+
+# ✅ GENAI WRAPPER FUNCTION
+def team_vs_team_genai_page(ipl):
+    team1 = st.session_state.get("selected_team1")
+    team2 = st.session_state.get("selected_team2")
+    if team1 and team2:
+        team_vs_team_analysis(ipl, team1, team2)
 
 
 class IPLDashboard:
@@ -80,25 +87,45 @@ class IPLDashboard:
         col2.header(f"{team} Analysis", divider='rainbow')
 
         # 🧑‍💼 Player dropdown + Image beside it
-        # Get list of players for selected team
         players = list(self.ipl[self.ipl['BattingTeam'] == team]['batter'].unique())
-
         col1, col2 = st.columns([2, 1])
         selected_player = col1.selectbox("Select Player", players)
-
-        # ✅ Use get_image_path to get the player image
         img_path = get_image_path(selected_player)
-
         if img_path:
             col2.image(img_path, caption=selected_player, width=120)
 
-        # 📊 Player performance
+        # 📊 Batting performance
         record = self.get_batsman_record(selected_player)
-        st.subheader(f"📊 Performance of {selected_player} vs Opponent Teams")
+        st.subheader(f"📊 Batting Record of {selected_player}")
         st.dataframe(record, use_container_width=True)
 
-        # Pie Chart for Run %
-        st.markdown(f"### 🥧{selected_player} Run Contribution vs Each Team")
+        # 🎯 Bowling performance (if available)
+        bowling_df = self.ipl[self.ipl['bowler'] == selected_player]
+        if not bowling_df.empty:
+            st.subheader(f"🎯 Bowling Record of {selected_player}")
+
+            # Filter for valid wicket deliveries
+            wicket_df = bowling_df[(bowling_df['isWicketDelivery'] == 1) & (bowling_df['player_out'].notna()) & (bowling_df['player_out'] != '')]
+    
+            total_wickets = wicket_df.shape[0]
+            total_balls = bowling_df['ballnumber'].count()
+            total_overs = round(total_balls / 6, 1)
+            total_runs = bowling_df['total_run'].sum()
+
+            # Display key stats
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Wickets", total_wickets)
+            col2.metric("Total Overs", total_overs)
+            col3.metric("Runs Conceded", total_runs)
+
+            # Show team-wise breakdown
+            bowler_record = self.get_bowler_record(selected_player)
+            st.dataframe(bowler_record, use_container_width=True)
+        else:
+            st.info(f"ℹ️ {selected_player} has not bowled in the IPL data.")
+
+         # 🥧 Pie Chart
+        st.markdown(f"### 🥧 {selected_player} Run Contribution vs Each Team")
         fig, ax = plt.subplots()
         ax.pie(
             record['Run %'],
@@ -106,11 +133,11 @@ class IPLDashboard:
             autopct='%1.1f%%',
             startangle=90,
             textprops={'fontsize': 8}
-            )
-        ax.axis('equal')  # Equal aspect ratio ensures pie is circular.
+        )
+        ax.axis('equal')
         st.pyplot(fig)
 
-
+    ### Batsman Record.
     def get_batsman_record(self, batsman):
         df = self.ipl[self.ipl['batter'] == batsman]
         grouped = df.groupby('BowlingTeam')['batsman_run'].sum().sort_values(ascending=False).reset_index()
@@ -124,7 +151,46 @@ class IPLDashboard:
 
         return grouped
 
+    ## Bowller record.
+    def get_bowler_record(self, bowler):
+        df = self.ipl[self.ipl['bowler'] == bowler]
 
+        # Valid wickets only
+        wickets_df = df[(df['isWicketDelivery'] == 1) & (df['player_out'].notna()) & (df['player_out'] != '')]
+
+        # Total wickets per team
+        grouped = wickets_df.groupby('BattingTeam')['player_out'].count().sort_values(ascending=False).reset_index()
+        grouped.columns = ['BattingTeam', 'Wickets']
+
+        # Balls and runs for economy
+        grouped['Balls'] = df.groupby('BattingTeam')['ballnumber'].count().reindex(grouped['BattingTeam']).values
+        grouped['Runs'] = df.groupby('BattingTeam')['total_run'].sum().reindex(grouped['BattingTeam']).values
+        grouped['Economy'] = (grouped['Runs'] / grouped['Balls']) * 6
+
+        # 🔥 Best bowling in a match vs each team (wickets/runs)
+        match_stats = df.groupby(['BattingTeam', 'ID']).agg(
+            runs_in_match=('total_run', 'sum'),
+            balls_in_match=('ballnumber', 'count')
+        ).reset_index()
+
+        match_wickets = wickets_df.groupby(['BattingTeam', 'ID'])['player_out'].count().reset_index(name='wickets_in_match')
+
+        match_combined = pd.merge(match_stats, match_wickets, on=['BattingTeam', 'ID'], how='left').fillna(0)
+        match_combined['wickets_in_match'] = match_combined['wickets_in_match'].astype(int)
+
+        # Get best figures per team
+        best_figures = match_combined.sort_values(['BattingTeam', 'wickets_in_match', 'runs_in_match'], ascending=[True, False, True]) \
+                                 .drop_duplicates('BattingTeam')[['BattingTeam', 'wickets_in_match', 'runs_in_match']]
+
+        best_figures['Best Bowling'] = best_figures['wickets_in_match'].astype(str) + "/" + best_figures['runs_in_match'].astype(str)
+
+        # Merge with grouped
+        grouped = grouped.merge(best_figures[['BattingTeam', 'Best Bowling']], on='BattingTeam', how='left')
+
+        return grouped
+
+
+    ## batsman vs bowller record.
     def show_duel(self, batsman, bowler):
         duel_df = self.ipl[(self.ipl['batter'] == batsman) & (self.ipl['bowler'] == bowler)]
         if duel_df.empty:
@@ -185,11 +251,16 @@ class IPLDashboard:
 
         elif option == "🏏-Team vs Team Analysis":
             team_list = sorted(set(self.ipl['Team1'].unique()) | set(self.ipl['Team2'].unique()))
-            team1 = st.sidebar.selectbox("Select Team 1", team_list)
-            team2 = st.sidebar.selectbox("Select Team 2", [t for t in team_list if t != team1])
 
-            if st.sidebar.button("Show Matchup Analysis"):
-                team_vs_team_page(self.ipl, team1, team2)
+            # Select teams every time (first or not)
+            team1 = st.sidebar.selectbox("Select Team 1", team_list, key="selected_team1")
+            team2 = st.sidebar.selectbox("Select Team 2", [t for t in team_list if t != team1], key="selected_team2")
+
+            if not st.session_state.get("genai_loaded", False):
+                team_vs_team_genai_page(self.ipl)
+                st.session_state["genai_loaded"] = True
+            elif st.sidebar.button("Show Matchup Analysis"):
+                team_vs_team_analysis(self.ipl, team1, team2)
 
         elif option == '📜-Tournament Summary':
             from src.tournament_summary import tournament_summary_page
