@@ -41,11 +41,24 @@ def venue_analysis_page(ipl):
     col3.metric("Total Fours", df[df['batsman_run'] == 4].shape[0])
     col4.metric("Total Sixes", df[df['batsman_run'] == 6].shape[0])
 
-    # Top Teams
-    st.subheader("🎯 Top Teams at this Venue")
-    team_counts = pd.concat([df['Team1'], df['Team2']]).value_counts().reset_index()
-    team_counts.columns = ['Team', 'Matches Played']
-    st.dataframe(team_counts, use_container_width=True)
+    # ✅ Corrected Team Match Counts
+    st.subheader("🎯 Top Teams at this Venue (Matches Played)")
+    team1_df = df[['ID', 'Team1']].rename(columns={'Team1': 'Team'})
+    team2_df = df[['ID', 'Team2']].rename(columns={'Team2': 'Team'})
+    all_teams_df = pd.concat([team1_df, team2_df], ignore_index=True)
+
+    matches_per_team = all_teams_df.groupby('Team')['ID'].nunique().reset_index()
+    matches_per_team.columns = ['Team', 'Matches Played']
+    matches_per_team = matches_per_team.sort_values(by='Matches Played', ascending=False)
+
+    st.dataframe(matches_per_team, use_container_width=True)
+
+    # Optional: Add win counts per team at venue (Uncomment if needed)
+    # st.subheader("🏆 Wins by Team at This Venue")
+    # wins_df = df[['ID', 'WinningTeam']].dropna().drop_duplicates()
+    # wins_by_team = wins_df['WinningTeam'].value_counts().reset_index()
+    # wins_by_team.columns = ['Team', 'Wins']
+    # st.dataframe(wins_by_team, use_container_width=True)
 
     # Top Run Scorers
     st.subheader("🧢 Top Run Scorers")
