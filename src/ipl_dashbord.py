@@ -14,14 +14,6 @@ import matplotlib.pyplot as plt
 
 import os
 
-# ✅ GENAI WRAPPER FUNCTION
-def team_vs_team_genai_page(ipl):
-    team1 = st.session_state.get("selected_team1")
-    team2 = st.session_state.get("selected_team2")
-    if team1 and team2:
-        team_vs_team_analysis(ipl, team1, team2)
-
-
 class IPLDashboard:
     def __init__(self):
         ### loading data.
@@ -252,15 +244,12 @@ class IPLDashboard:
         elif option == "🏏-Team vs Team Analysis":
             team_list = sorted(set(self.ipl['Team1'].unique()) | set(self.ipl['Team2'].unique()))
 
-            # Select teams every time (first or not)
-            team1 = st.sidebar.selectbox("Select Team 1", team_list, key="selected_team1")
-            team2 = st.sidebar.selectbox("Select Team 2", [t for t in team_list if t != team1], key="selected_team2")
+            team1 = st.sidebar.selectbox("Select Team 1", team_list)
+            team2 = st.sidebar.selectbox("Select Team 2", [t for t in team_list if t != team1])
 
-            if not st.session_state.get("genai_loaded", False):
-                team_vs_team_genai_page(self.ipl)
-                st.session_state["genai_loaded"] = True
-            elif st.sidebar.button("Show Matchup Analysis"):
+            if st.sidebar.button("Show Matchup Analysis"):
                 team_vs_team_analysis(self.ipl, team1, team2)
+
 
         elif option == '📜-Tournament Summary':
             from src.tournament_summary import tournament_summary_page
