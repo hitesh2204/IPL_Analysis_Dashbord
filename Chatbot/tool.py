@@ -6,11 +6,12 @@ from src.venue_analysis import get_venue_summary
 from src.tournament_summary import get_tournament_summary
 from src.leaderboard import get_leaderboard_summary
 import pandas as pd
+from src.data_loader import load_ipl_data
 import streamlit as st
 import re
 
 # Load IPL data globally
-ipl = pd.read_csv("IPL_Dataset//final_ipl.csv")
+ipl = load_ipl_data()
 
 # 📊 PLAYER TEXT SUMMARY TOOL
 @tool
