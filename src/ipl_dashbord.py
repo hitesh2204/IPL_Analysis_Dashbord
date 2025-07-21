@@ -70,15 +70,14 @@ class IPLDashboard:
         st.dataframe(pd.DataFrame(trophy_data), use_container_width=True)
 
     def team_analysis(self, team):
-        # 🔰 Team Logo and Title (keep this as-is)
+        # 🔰 Team Logo and Title
         logo_path = f"image-video/{team.replace(' ', '_').lower()}.jpeg"
-
         col1, col2 = st.columns([1, 5])
         if os.path.exists(logo_path):
             col1.image(Image.open(logo_path), width=100)
         col2.header(f"{team} Analysis", divider='rainbow')
 
-        # 🧑‍💼 Player dropdown + Image beside it
+        # 🧑‍💼 Player dropdown
         players = list(self.ipl[self.ipl['BattingTeam'] == team]['batter'].unique())
         col1, col2 = st.columns([2, 1])
         selected_player = col1.selectbox("Select Player", players)
@@ -87,47 +86,54 @@ class IPLDashboard:
             col2.image(img_path, caption=selected_player, width=120)
 
         # 📊 Batting performance
-        record = self.get_batsman_record(selected_player)
-        st.subheader(f"📊 Batting Record of {selected_player}")
-        st.dataframe(record, use_container_width=True)
+        batter_df = self.ipl[self.ipl['batter'] == selected_player]
+        
+        batting_summary = (
+            batter_df.groupby('BowlingTeam')
+            .agg(Matches=('ID', 'nunique'), Runs=('batsman_run', 'sum'), Balls=('ballnumber', 'count'))
+            .reset_index()
+        )
+        batting_summary['Strike Rate'] = (batting_summary['Runs'] / batting_summary['Balls']) * 100
+        batting_summary['Run %'] = (batting_summary['Runs'] / batting_summary['Runs'].sum()) * 100
 
-        # 🎯 Bowling performance (if available)
+        st.subheader(f"📊 Batting Record of {selected_player}")
+        st.dataframe(batting_summary, use_container_width=True)
+
+        # 🎯 Bowling performance
         bowling_df = self.ipl[self.ipl['bowler'] == selected_player]
         if not bowling_df.empty:
             st.subheader(f"🎯 Bowling Record of {selected_player}")
 
-            # Filter for valid wicket deliveries
-            wicket_df = bowling_df[(bowling_df['isWicketDelivery'] == 1) & (bowling_df['player_out'].notna()) & (bowling_df['player_out'] != '')]
-    
+            wicket_df = bowling_df[(bowling_df['isWicketDelivery'] == 1) & (bowling_df['player_out'].notna())]
             total_wickets = wicket_df.shape[0]
-            total_balls = bowling_df['ballnumber'].count()
+            total_balls = bowling_df.shape[0]
             total_overs = round(total_balls / 6, 1)
             total_runs = bowling_df['total_run'].sum()
 
-            # Display key stats
             col1, col2, col3 = st.columns(3)
             col1.metric("Total Wickets", total_wickets)
             col2.metric("Total Overs", total_overs)
             col3.metric("Runs Conceded", total_runs)
 
-            # Show team-wise breakdown
+            # Show team-wise bowling breakdown
             bowler_record = self.get_bowler_record(selected_player)
             st.dataframe(bowler_record, use_container_width=True)
         else:
             st.info(f"ℹ️ {selected_player} has not bowled in the IPL data.")
 
-         # 🥧 Pie Chart
-        st.markdown(f"### 🥧 {selected_player} Run Contribution vs Each Team")
-        fig, ax = plt.subplots()
-        ax.pie(
-            record['Run %'],
-            labels=record['BowlingTeam'],
-            autopct='%1.1f%%',
-            startangle=90,
-            textprops={'fontsize': 8}
-        )
-        ax.axis('equal')
-        st.pyplot(fig)
+        # 🥧 Pie Chart - Batting Contribution
+        if not batting_summary.empty:
+            st.markdown(f"### 🥧 {selected_player} Run Contribution vs Each Team")
+            fig, ax = plt.subplots()
+            ax.pie(
+                batting_summary['Run %'],
+                labels=batting_summary['BowlingTeam'],
+                autopct='%1.1f%%',
+                startangle=90,
+                textprops={'fontsize': 8}
+            )
+            ax.axis('equal')
+            st.pyplot(fig)
 
     ### Batsman Record.
     def get_batsman_record(self, batsman):

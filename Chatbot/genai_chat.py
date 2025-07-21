@@ -10,4 +10,4 @@ def genai_chat_tab():
     if query:
         with st.spinner("Thinking..."):
             response = run_ipl_agent(query)
-            st.success(response)
+            st.write(response)
