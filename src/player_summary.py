@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
-from src.utils import get_image_path  # Optional
+from src.utils import get_image_path # Optional
+from src.data_loader import load_ipl_data
 
 def player_summary_page(ipl):
+    
     st.markdown("## 👤 Player Career Summary")
 
     selected_player = st.session_state.get('selected_player')
@@ -77,9 +79,6 @@ def player_summary_page(ipl):
     teams_played = sorted(set(batting_teams).union(set(bowling_teams)))
     st.write(", ".join(teams_played) if teams_played else "No teams found.")
 
-    st.markdown("### 📆 Seasons Played")
-    seasons_played = sorted(full_df['Season'].dropna().unique())
-    st.write(", ".join(str(s) for s in seasons_played) if seasons_played else "No season data.")
 
     if not player_df.empty:
         st.markdown("### 📊 Season-wise Runs")
@@ -90,7 +89,7 @@ def player_summary_page(ipl):
 
 # 🧠 GENAI FUNCTION — Used by LangChain Agent
 def get_player_summary(player_name: str) -> str:
-    ipl = pd.read_csv("IPL_Dataset/final_ipl.csv")
+    ipl = load_ipl_data()
 
     player_df = ipl[ipl['batter'] == player_name]
     bowler_df = ipl[ipl['bowler'] == player_name]
