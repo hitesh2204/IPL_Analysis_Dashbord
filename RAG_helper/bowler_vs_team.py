@@ -51,5 +51,5 @@ def generate_bowler_vs_team_csv(ipl):
 
 # Run the script directly
 if __name__ == "__main__":
-    ipl = pd.read_csv("ipl_dataset//final_ipl.csv")
+    ipl = pd.read_csv("IPL_Dataset//ipl_df.csv")
     generate_bowler_vs_team_csv(ipl)

@@ -36,5 +36,5 @@ def generate_venue_stats_csv(ipl):
 
 # Call this with IPL data
 if __name__ == "__main__":
-    ipl_df = pd.read_csv("ipl_dataset//final_ipl.csv")  # Adjust path if needed
+    ipl_df = pd.read_csv("ipl_dataset//ipl_df.csv")  # Adjust path if needed
     generate_venue_stats_csv(ipl_df)

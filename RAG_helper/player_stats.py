@@ -57,5 +57,5 @@ def generate_player_stats_csv(ipl):
 
 # Run from main
 if __name__ == "__main__":
-    ipl_df = pd.read_csv("ipl_dataset/final_ipl.csv")
+    ipl_df = pd.read_csv("ipl_dataset/ipl_df.csv")
     generate_player_stats_csv(ipl_df)
