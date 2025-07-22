@@ -38,5 +38,5 @@ def generate_team_records_csv(ipl):
 
 # Run the function with your IPL DataFrame
 if __name__ == "__main__":
-    ipl = pd.read_csv("ipl_dataset//final_ipl.csv")
+    ipl = pd.read_csv("ipl_dataset//ipl_df.csv")
     generate_team_records_csv(ipl)

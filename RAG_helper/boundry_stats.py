@@ -27,5 +27,5 @@ def generate_boundary_stats_csv(ipl):
         print(f"❌ Error: {e}")
 
 if __name__ == "__main__":
-    ipl_df = pd.read_csv("IPL_Dataset//final_ipl.csv")  # ✅ Ensure this file path is correct
+    ipl_df = pd.read_csv("IPL_Dataset//ipl_df.csv")  # ✅ Ensure this file path is correct
     generate_boundary_stats_csv(ipl_df)

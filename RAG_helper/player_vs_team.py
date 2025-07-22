@@ -45,5 +45,5 @@ def generate_player_vs_team_csv(ipl):
 
 # Run directly
 if __name__ == "__main__":
-    ipl = pd.read_csv("ipl_dataset//final_ipl.csv")
+    ipl = pd.read_csv("ipl_dataset//ipl_df.csv")
     generate_player_vs_team_csv(ipl)

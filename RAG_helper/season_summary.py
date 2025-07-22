@@ -55,5 +55,5 @@ def generate_season_summary_csv(ipl):
     print("✅ Clean season_summary.csv generated (without winner)!")
 
 if __name__ == "__main__":
-    ipl_df = pd.read_csv("ipl_dataset//final_ipl.csv")
+    ipl_df = pd.read_csv("ipl_dataset//ipl_df.csv")
     generate_season_summary_csv(ipl_df)
