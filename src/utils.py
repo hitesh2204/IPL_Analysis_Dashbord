@@ -32,44 +32,6 @@ def get_image_path(player_name, image_folder="IPL_Player"):
     # 👇 Return a valid image object to prevent crashing
     return None
 
-
-def render_overview_carousel():
-    st.markdown("## 🏏 IPL Insights Overview")
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.title("IPL-Insights-by-Hitesh")
-    with col2:
-        st.image(Image.open("image-video/hitu.jpeg"), width=120)
-
-    st.title(":red[IPL]:green[-]:blue[Analysis] :sunglasses:")
-
-    # ✅ Intro image
-    #intro_img = "image-video/IPL1-2024-Squad.jpg"
-    #if os.path.exists(intro_img):
-        #st.image(Image.open(intro_img), caption='All IPL Teams & Captains')
-
-
-    # ✅ Slideshow Section (Rotating Player Images)
-    st.markdown("### 🖼️ IPL Stars - Auto Slideshow")
-
-    image_folder = "image-video/carousel"
-    image_files = sorted([f for f in os.listdir(image_folder) if f.endswith((".jpg", ".jpeg", ".png"))])
-    image_paths = [os.path.join(image_folder, f) for f in image_files]
-
-    if image_paths:
-        if "img_index" not in st.session_state:
-            st.session_state.img_index = 0
-
-        current_img = Image.open(image_paths[st.session_state.img_index])
-        st.image(current_img, use_column_width=True, caption=image_files[st.session_state.img_index])
-
-        time.sleep(2)
-        st.session_state.img_index = (st.session_state.img_index + 1) % len(image_paths)
-        st.experimental_rerun()
-    else:
-        st.warning("No slideshow images found!")
-
     
     # ✅ Autoplay Video (🎥)
     video_path = "image-video/ipl_video.mp4"
@@ -79,3 +41,55 @@ def render_overview_carousel():
         st.warning("⚠️ IPL video not found!")
 
     st.balloons()
+
+
+TEAM_NAME_ALIASES = {
+    'CSK': 'Chennai Super Kings',
+    'CHENNAI SUPER KINGS': 'Chennai Super Kings',
+
+    'RCB': 'Royal Challengers Bangalore',
+    'ROYAL CHALLENGERS BANGALORE': 'Royal Challengers Bangalore',
+
+    'MI': 'Mumbai Indians',
+    'MUMBAI INDIANS': 'Mumbai Indians',
+
+    'KKR': 'Kolkata Knight Riders',
+    'KOLKATA KNIGHT RIDERS': 'Kolkata Knight Riders',
+
+    'RR': 'Rajasthan Royals',
+    'RAJASTHAN ROYALS': 'Rajasthan Royals',
+
+    'DC': 'Delhi Capitals',
+    'DELHI CAPITALS': 'Delhi Capitals',
+
+    'PBKS': 'Punjab Kings',
+    'PUNJAB KINGS': 'Punjab Kings',
+
+    'SRH': 'Sunrisers Hyderabad',
+    'SUNRISERS HYDERABAD': 'Sunrisers Hyderabad',
+
+    'GL': 'Gujarat Lions',
+    'GUJARAT LIONS': 'Gujarat Lions',
+
+    'GT': 'Gujarat Titans',
+    'GUJARAT TITANS': 'Gujarat Titans',
+
+    'LSG': 'Lucknow Super Giants',
+    'LUCKNOW SUPER GIANTS': 'Lucknow Super Giants',
+
+    'PWI': 'Pune Warriors',
+    'PUNE WARRIORS': 'Pune Warriors',
+
+    'RPS': 'Rising Pune Supergiant',
+    'RISING PUNE SUPERGIANT': 'Rising Pune Supergiant',
+
+    'KTK': 'Kochi Tuskers Kerala',
+    'KOCHI TUSKERS KERALA': 'Kochi Tuskers Kerala',
+
+    'DC_OLD': 'Deccan Chargers',
+    'DECCAN CHARGERS': 'Deccan Chargers'
+}
+
+def normalize_team_name(name):
+    name_upper = name.strip().upper()
+    return TEAM_NAME_ALIASES.get(name_upper, name)
