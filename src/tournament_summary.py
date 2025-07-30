@@ -5,7 +5,7 @@ from src.tournament_summary_data import tournament_summary
 
 ## Streamlit UI for tournament summary.
 def tournament_summary_page():
-    st.header("🏆 IPL Tournament Summary (2008 - 2024)", divider="rainbow")
+    st.header("🏆 IPL Tournament Summary (2008 - 2025)", divider="rainbow")
     
     df = pd.DataFrame(tournament_summary).sort_values("Season", ascending=False)
     

@@ -3,7 +3,7 @@ import os
 
 def generate_batting_phase_stats(input_csv_path, output_folder):
     # Load data
-    df = pd.read_csv(input_csv_path)
+    df = pd.read_csv(input_csv_path,encoding='ISO-8859-1')
 
     # ✅ Sanity check for required columns
     required_cols = ['ID', 'Season', 'BattingTeam', 'batter', 'overs', 'ballnumber', 'batsman_run', 'total_run']
@@ -29,9 +29,9 @@ def generate_batting_phase_stats(input_csv_path, output_folder):
     # ✅ Group by batter, team, phase
     phase_stats = df.groupby(['batter', 'BattingTeam', 'phase']).agg(
         matches=('ID', lambda x: x.nunique()),
-        innings=('ID', 'count'),
+        innings=('ID', lambda x: x.nunique()),  # unique matches played in phase
         runs=('batsman_run', 'sum'),
-        balls_faced=('ballnumber', 'count'),
+        balls_faced=('ballnumber', 'count'),  # Assuming ball-level data
         fours=('is_four', 'sum'),
         sixes=('is_six', 'sum')
     ).reset_index()
@@ -41,9 +41,11 @@ def generate_batting_phase_stats(input_csv_path, output_folder):
 
     # ✅ Rename columns for clarity
     phase_stats.rename(columns={
-        'batter': 'batter',
-        'batting_team': 'team',
-    }, inplace=True)
+        'BattingTeam': 'team',
+    }, inplace=True, errors='ignore')
+
+    # ✅ Cast to int for readability
+    phase_stats[['matches', 'innings']] = phase_stats[['matches', 'innings']].astype(int)
 
     # ✅ Reorder columns
     phase_stats = phase_stats[[
@@ -52,8 +54,8 @@ def generate_batting_phase_stats(input_csv_path, output_folder):
 
     # ✅ Save as CSV
     os.makedirs(output_folder, exist_ok=True)
-    phase_stats.to_csv(os.path.join(output_folder, 'batting_phase_stats.csv'), index=False)
+    phase_stats.to_csv(os.path.join(output_folder, 'batting_phase_stats1.csv'), index=False)
     print("✅ batting_phase_stats.csv generated successfully.")
 
 if __name__ == "__main__":
-    generate_batting_phase_stats("IPL_Dataset/ipl_df.csv", "ipl_dataset/rag_knowledgebase")
+    generate_batting_phase_stats("IPL_Dataset/final_ipl.csv", "ipl_dataset/rag_knowledgebase")

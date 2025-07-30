@@ -1,49 +1,72 @@
 import pandas as pd
 
-def generate_player_vs_team_csv(ipl):
-    player_vs_team_stats = []
+def calculate_player_vs_team(csv_path):
+    df = pd.read_csv(csv_path,encoding='ISO-8859-1')
+    df = df.dropna(subset=["batter", "bowler"])
 
-    # Detect correct column for bowling team
-    if 'BowlingTeam' in ipl.columns:
-        bowling_col = 'BowlingTeam'
-    elif 'Team2' in ipl.columns:
-        bowling_col = 'Team2'  # fallback
-    else:
-        raise KeyError("❌ Neither 'BowlingTeam' nor 'Team2' column found in dataset.")
+    # Combine batting and bowling players
+    players = set(df["batter"].unique()).union(set(df["bowler"].unique()))
+    teams = df["BattingTeam"].unique()
 
-    for player in ipl['batter'].unique():
-        player_df = ipl[ipl['batter'] == player]
+    data = []
 
-        for opposition in player_df[bowling_col].unique():
-            opp_df = player_df[player_df[bowling_col] == opposition]
-            runs = opp_df['batsman_run'].sum()
-            balls = opp_df.shape[0]
-            outs = opp_df[opp_df['player_out'] == player].shape[0]
-            strike_rate = round((runs / balls) * 100, 2) if balls > 0 else 0
+    for player in players:
+        for team in teams:
+            # Batting vs team
+            bdf = df[(df["batter"] == player) & (df["BowlingTeam"] == team)]
+            matches_batted = bdf["ID"].nunique()
+            total_runs = bdf["batsman_run"].sum()
+            balls_faced = bdf["ballnumber"].count()
+            fours = (bdf["batsman_run"] == 4).sum()
+            sixes = (bdf["batsman_run"] == 6).sum()
 
-            match_runs = opp_df.groupby('ID')['batsman_run'].sum()
-            highest_score = match_runs.max() if not match_runs.empty else 0
+            match_runs = bdf.groupby("ID")["batsman_run"].sum()
             fifties = match_runs[(match_runs >= 50) & (match_runs < 100)].count()
             hundreds = match_runs[match_runs >= 100].count()
 
-            player_vs_team_stats.append({
-                'batter': player,
-                'opposition': opposition,
-                'matches': opp_df['ID'].nunique(),
-                'runs': runs,
-                'balls': balls,
-                'strike_rate': strike_rate,
-                'dismissals': outs,
-                'highest_score': highest_score,
-                '50s': fifties,
-                '100s': hundreds
+            dismissals = df[(df["player_out"] == player) & (df["BowlingTeam"] == team)].shape[0]
+            strike_rate = (total_runs / balls_faced) * 100 if balls_faced else 0
+            batting_avg = (total_runs / dismissals) if dismissals else None
+
+            # Bowling vs team
+            bwdf = df[(df["bowler"] == player) & (df["BattingTeam"] == team)]
+            balls_bowled = bwdf["ballnumber"].count()
+            runs_conceded = bwdf["total_run"].sum()
+            wickets = bwdf["player_out"].notna().sum()
+            overs = balls_bowled // 6 + (balls_bowled % 6) / 10
+            economy = runs_conceded / overs if overs else 0
+            bowling_avg = runs_conceded / wickets if wickets else None
+
+            wickets_by_match = bwdf[bwdf["player_out"].notna()].groupby("ID")["player_out"].count()
+            five_wkts = wickets_by_match[wickets_by_match >= 5].count()
+
+            data.append({
+                "Player": player,
+                "AgainstTeam": team,
+                "MatchesBatted": matches_batted,
+                "Runs": total_runs,
+                "BallsFaced": balls_faced,
+                "Fours": fours,
+                "Sixes": sixes,
+                "50s": fifties,
+                "100s": hundreds,
+                "Dismissals": dismissals,
+                "StrikeRate": round(strike_rate, 2) if balls_faced else 0,
+                "BattingAverage": round(batting_avg, 2) if batting_avg else None,
+                "BallsBowled": balls_bowled,
+                "RunsConceded": runs_conceded,
+                "Wickets": wickets,
+                "5w": five_wkts,
+                "Overs": round(overs, 2) if overs else 0,
+                "Economy": round(economy, 2) if economy else None,
+                "BowlingAverage": round(bowling_avg, 2) if bowling_avg else None,
             })
 
-    df = pd.DataFrame(player_vs_team_stats)
-    df.to_csv("ipl_dataset//rag_knowledgebase//player_vs_team.csv", index=False)
-    print("✅ player_vs_team.csv generated successfully!")
+    result_df = pd.DataFrame(data)
+    result_df.to_csv("IPL_Dataset//rag_knowledgebase//player_vs_team_stats.csv", index=False)
+    print("✅ Saved 'player_vs_team_stats.csv' with player vs opponent team performance.")
 
-# Run directly
-if __name__ == "__main__":
-    ipl = pd.read_csv("ipl_dataset//ipl_df.csv")
-    generate_player_vs_team_csv(ipl)
+# Example usage:
+# calculate_player_vs_team("final_ipl.csv")
+if __name__=="__main__":
+    calculate_player_vs_team("IPL_Dataset//final_ipl.csv")
