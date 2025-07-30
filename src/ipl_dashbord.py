@@ -27,8 +27,8 @@ class IPLDashboard:
 
 
         # ✅ Create 'over' column if it's missing
-        if 'over' not in self.ipl.columns:
-            self.ipl['over'] = ((self.ipl['ballnumber'] - 1) // 6) + 1
+        #if 'overs' not in self.ipl.columns:
+           #self.ipl['over'] = ((self.ipl['ballnumber'] - 1) // 6) + 1
 
 
         self.batsmen = sorted(self.ipl['batter'].unique())
@@ -58,13 +58,13 @@ class IPLDashboard:
             "Team": [
                 "Mumbai Indians", "Chennai Super Kings", "Kolkata Knight Riders",
                 "Sunrisers Hyderabad", "Rajasthan Royals", "Deccan Chargers",
-                "Gujarat Titans"
+                "Gujarat Titans","Royal Challengers Bangalore"
             ],
-            "Titles Won": [5, 5, 2, 1, 1, 1, 1],
+            "Titles Won": [5, 5, 3, 1, 1, 1, 1, 1],
             "Winning Years": [
                 "2013, 2015, 2017, 2019, 2020",
                 "2010, 2011, 2018, 2021, 2023",
-                "2012, 2014", "2016", "2008", "2009", "2022"
+                "2012, 2014, 2024", "2016", "2008", "2009", "2022", "2025"
             ]
         }
         st.dataframe(pd.DataFrame(trophy_data), use_container_width=True)

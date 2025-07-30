@@ -12,7 +12,7 @@ def load_ipl_data():
         lambda row: row["Team2"] if row["BattingTeam"] == row["Team1"] else row["Team1"], axis=1
     )
 
-    ipl_df=pd.read_csv("ipl_dataset//ipl_df.csv")
+    ipl_df=pd.read_csv("ipl_dataset//final_ipl.csv")
     
     return ipl_df
 
