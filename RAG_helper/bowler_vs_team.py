@@ -1,55 +1,58 @@
 import pandas as pd
 
-def generate_bowler_vs_team_csv(ipl):
-    bowler_stats = []
+def generate_bowler_vs_team_stats(csv_path):
+    df = pd.read_csv(csv_path, encoding='ISO-8859-1')
 
-    # Determine which column represents the batting team
-    if 'BattingTeam' in ipl.columns:
-        batting_col = 'BattingTeam'
-    elif 'Team1' in ipl.columns:
-        batting_col = 'Team1'  # Fallback
-    else:
-        raise KeyError("❌ 'BattingTeam' or 'Team1' column not found in dataset.")
+    df = df.dropna(subset=["bowler", "BattingTeam"])
+    df["is_wicket"] = df["player_out"].notna()
 
-    for bowler in ipl['bowler'].unique():
-        bowler_df = ipl[ipl['bowler'] == bowler]
+    # One row = one delivery ⇒ count rows per match
+    per_match_stats = df.groupby(["bowler", "BattingTeam", "ID"]).agg({
+        "total_run": "sum",
+        "is_wicket": "sum"
+    }).reset_index()
 
-        for team in bowler_df[batting_col].unique():
-            vs_team_df = bowler_df[bowler_df[batting_col] == team]
-            total_balls = vs_team_df.shape[0]
-            total_runs = vs_team_df['total_run'].sum()
+    # Add delivery count manually
+    delivery_counts = df.groupby(["bowler", "BattingTeam", "ID"]).size().reset_index(name="deliveries")
+    per_match_stats = per_match_stats.merge(delivery_counts, on=["bowler", "BattingTeam", "ID"])
 
-            # Only valid wicket deliveries count for wicket-taking
-            wicket_df = vs_team_df[(vs_team_df['isWicketDelivery'] == 1) & (vs_team_df['player_out'].notnull())]
-            total_wickets = wicket_df.shape[0]
+    final_stats = []
 
-            # Best bowling = max wickets in a single match
-            best_bowling_df = wicket_df.groupby('ID')['player_out'].count()
-            best_figures = best_bowling_df.max() if not best_bowling_df.empty else 0
+    for (bowler, team), group in per_match_stats.groupby(["bowler", "BattingTeam"]):
+        balls = group["deliveries"].sum()
+        runs = group["total_run"].sum()
+        wickets = group["is_wicket"].sum()
+        matches = group.shape[0]
 
-            # 3W and 5W hauls
-            threes = best_bowling_df[best_bowling_df >= 3].count()
-            fives = best_bowling_df[best_bowling_df >= 5].count()
+        overs = balls // 6 + (balls % 6) / 10
+        economy = runs / (balls / 6) if balls else 0
+        avg = runs / wickets if wickets else None
+        strike_rate = balls / wickets if wickets else None
 
-            economy = round((total_runs / total_balls) * 6, 2) if total_balls > 0 else 0
+        # 3w and 5w hauls
+        three_wkts = (group["is_wicket"] >= 3).sum()
+        five_wkts = (group["is_wicket"] >= 5).sum()
+        best_wkts = int(group["is_wicket"].max()) if not group["is_wicket"].isnull().all() else "-"
 
-            bowler_stats.append({
-                'bowler': bowler,
-                'opposition': team,
-                'balls_bowled': total_balls,
-                'runs_conceded': total_runs,
-                'wickets': total_wickets,
-                'best_figures': best_figures,
-                'economy': economy,
-                '3W_hauls': threes,
-                '5W_hauls': fives
-            })
+        final_stats.append({
+            "Bowler": bowler,
+            "AgainstTeam": team,
+            "Matches": matches,
+            "BallsBowled": balls,
+            "Overs": round(overs, 2),
+            "RunsConceded": runs,
+            "Wickets": wickets,
+            "3w": three_wkts,
+            "5w": five_wkts,
+            "BestFigure": best_wkts,
+            "Economy": round(economy, 2),
+            "Average": round(avg, 2) if avg else None,
+            "StrikeRate": round(strike_rate, 2) if strike_rate else None,
+        })
 
-    df = pd.DataFrame(bowler_stats)
-    df.to_csv("ipl_dataset//rag_knowledgebase//bowler_vs_team.csv", index=False)
-    print("✅ bowler_vs_team.csv generated successfully!")
+    df_result = pd.DataFrame(final_stats)
+    df_result.to_csv("IPL_Dataset//rag_knowledgebase//bowler_vs_teams.csv", index=False)
+    print("✅ Bowler vs Team stats saved successfully.")
 
-# Run the script directly
 if __name__ == "__main__":
-    ipl = pd.read_csv("IPL_Dataset//ipl_df.csv")
-    generate_bowler_vs_team_csv(ipl)
+    generate_bowler_vs_team_stats("IPL_Dataset//final_ipl.csv")

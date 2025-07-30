@@ -1,59 +1,68 @@
 import pandas as pd
 
-def clean_season_column(df):
-    def extract_year(season):
-        if isinstance(season, str) and '/' in season:
-            parts = season.split('/')
-            if len(parts) == 2:
-                return int("20" + parts[1])
-        try:
-            return int(season)
-        except:
-            return None
+def generate_season_summary(csv_path, output_path):
+    # Load IPL dataset
+    df = pd.read_csv(csv_path, encoding='ISO-8859-1')
 
-    df['Season'] = df['Season'].apply(extract_year)
-    df = df.dropna(subset=['Season'])
-    df['Season'] = df['Season'].astype(int)
-    return df
+    summary = []
 
-def generate_season_summary_csv(ipl):
-    ipl = clean_season_column(ipl)
-
-    summary_list = []
-
-    for season in sorted(ipl['Season'].unique()):
-        season_df = ipl[ipl['Season'] == season]
+    for season in sorted(df['Season'].unique()):
+        season_df = df[df['Season'] == season]
 
         total_matches = season_df['ID'].nunique()
-        total_runs = season_df['batsman_run'].sum()
+        total_runs = season_df['total_run'].sum()
+        total_fours = season_df[season_df['batsman_run'] == 4].shape[0]
+        total_sixes = season_df[season_df['batsman_run'] == 6].shape[0]
+        total_boundary_runs = (total_fours * 4) + (total_sixes * 6)
 
-        # Top Scorer
-        top_batsman_df = season_df.groupby('batter')['batsman_run'].sum().reset_index()
-        top_batsman_df = top_batsman_df.sort_values(by='batsman_run', ascending=False)
-        top_scorer = top_batsman_df.iloc[0]['batter']
-        top_scorer_runs = int(top_batsman_df.iloc[0]['batsman_run'])
+        # Highest team total in a match
+        match_runs = season_df.groupby(['ID', 'BattingTeam'])['total_run'].sum().reset_index()
+        top_score_row = match_runs.loc[match_runs['total_run'].idxmax()]
+        highest_score_team = top_score_row['BattingTeam']
+        highest_score_runs = top_score_row['total_run']
+        highest_score_match_id = top_score_row['ID']
 
-        # Top Wicket Taker
-        wicket_df = season_df[season_df['player_out'].notnull()]
-        top_bowler_df = wicket_df.groupby('bowler')['player_out'].count().reset_index()
-        top_bowler_df = top_bowler_df.sort_values(by='player_out', ascending=False)
-        top_wicket_taker = top_bowler_df.iloc[0]['bowler']
-        top_wickets = int(top_bowler_df.iloc[0]['player_out'])
+        # Top batsman
+        top_batsman_stats = season_df.groupby('batter')['batsman_run'].sum().reset_index()
+        top_batsman_stats = top_batsman_stats.sort_values(by='batsman_run', ascending=False).head(1)
+        top_batsman = top_batsman_stats.iloc[0]['batter']
+        top_batsman_runs = top_batsman_stats.iloc[0]['batsman_run']
 
-        summary_list.append({
-            'season': season,
-            'total_matches': total_matches,
-            'total_runs': total_runs,
-            'top_scorer': top_scorer,
-            'top_scorer_runs': top_scorer_runs,
-            'top_wicket_taker': top_wicket_taker,
-            'top_wickets': top_wickets
+        # Top bowler
+        top_bowler_stats = season_df[season_df['isWicketDelivery'] == 1].groupby('bowler')['player_out'].count().reset_index()
+        top_bowler_stats = top_bowler_stats.sort_values(by='player_out', ascending=False).head(1)
+        top_bowler = top_bowler_stats.iloc[0]['bowler']
+        top_bowler_wickets = top_bowler_stats.iloc[0]['player_out']
+
+        # Season winner (last match winner)
+        last_match_id = season_df['ID'].max()
+        winner_row = season_df[season_df['ID'] == last_match_id]
+        winner = winner_row['WinningTeam'].dropna().values
+        winner = winner[0] if len(winner) > 0 else 'No Result'
+
+        summary.append({
+            'Season': season,
+            'Total Matches': total_matches,
+            'Total Runs': total_runs,
+            'Total Fours': total_fours,
+            'Total Sixes': total_sixes,
+            'Total Boundary Runs': total_boundary_runs,
+            'Highest Score Team': highest_score_team,
+            'Highest Score Runs': highest_score_runs,
+            'Highest Score Match ID': highest_score_match_id,
+            'Top Batsman': top_batsman,
+            'Top Batsman Runs': top_batsman_runs,
+            'Top Bowler': top_bowler,
+            'Top Bowler Wickets': top_bowler_wickets,
+            'Season Winner': winner
         })
 
-    season_summary_df = pd.DataFrame(summary_list)
-    season_summary_df.to_csv("ipl_dataset//rag_knowledgebase//season_summary.csv", index=False)
-    print("✅ Clean season_summary.csv generated (without winner)!")
+    summary_df = pd.DataFrame(summary)
 
-if __name__ == "__main__":
-    ipl_df = pd.read_csv("ipl_dataset//ipl_df.csv")
-    generate_season_summary_csv(ipl_df)
+    # Save to CSV
+    summary_df.to_csv(output_path, index=False)
+    print(f"✅ Season summary saved to: {output_path}")
+
+# Example usage
+if __name__=="__main__":
+    generate_season_summary("IPL_Dataset/final_ipl.csv", "IPL_Dataset/rag_knowledgebase/season_summary_final1.csv")
