@@ -5,9 +5,9 @@ import seaborn as sns
 import altair as alt
 import os
 from PIL import Image
-from logger import setup_logger
+from core.logger import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 def team_vs_team_analysis(ipl, team1, team2):
     try:

@@ -3,10 +3,10 @@
 import streamlit as st
 import pandas as pd
 from src.tournament_summary_data import tournament_summary
-from logger import setup_logger
+from core.logger import setup_logger
 
 # Initialize logger
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 def tournament_summary_page():
     st.header("🏆 IPL Tournament Summary (2008 - 2025)", divider="rainbow")

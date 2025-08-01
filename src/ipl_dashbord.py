@@ -11,11 +11,11 @@ from src.venue_analysis import venue_analysis_page
 from Chatbot.genai_chat import genai_chat_tab
 from src.team_vs_team import team_vs_team_analysis
 from src.tournament_summary import tournament_summary_page
-from logger import setup_logger
+from core.logger import setup_logger
 import matplotlib.pyplot as plt
 import os
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 class IPLDashboard:
     def __init__(self):

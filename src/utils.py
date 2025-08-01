@@ -6,9 +6,9 @@ from PIL import Image
 import streamlit as st
 import time
 import re
-from logger import setup_logger
+from core.logger import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 @st.cache_resource
 def load_encoded_video(video_path):
