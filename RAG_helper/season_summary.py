@@ -65,4 +65,4 @@ def generate_season_summary(csv_path, output_path):
 
 # Example usage
 if __name__=="__main__":
-    generate_season_summary("IPL_Dataset/final_ipl.csv", "IPL_Dataset/rag_knowledgebase/season_summary_final1.csv")
+    generate_season_summary("IPL_Dataset/final_ipl.csv", "IPL_Dataset/rag_knowledgebase/season_summary_final.csv")
