@@ -1,3 +1,4 @@
+
 import pandas as pd
 import os
 
@@ -54,7 +55,7 @@ def generate_batting_phase_stats(input_csv_path, output_folder):
 
     # ✅ Save as CSV
     os.makedirs(output_folder, exist_ok=True)
-    phase_stats.to_csv(os.path.join(output_folder, 'batting_phase_stats1.csv'), index=False)
+    phase_stats.to_csv(os.path.join(output_folder, 'batting_phase_stats.csv'), index=False)
     print("✅ batting_phase_stats.csv generated successfully.")
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ def generate_team_powerplay_stats(csv_path):
     ]]
 
     # Save to CSV
-    powerplay_stats.to_csv("IPL_Dataset//rag_knowledgebase//powerplay_stats1.csv", index=False)
+    powerplay_stats.to_csv("IPL_Dataset//rag_knowledgebase//powerplay_stats.csv", index=False)
 
 # Run as script
 if __name__ == "__main__":

@@ -63,7 +63,7 @@ def calculate_player_vs_team(csv_path):
             })
 
     result_df = pd.DataFrame(data)
-    result_df.to_csv("IPL_Dataset//rag_knowledgebase//player_vs_team_stats.csv", index=False)
+    result_df.to_csv("IPL_Dataset//rag_knowledgebase//player_vs_team_stats1.csv", index=False)
     print("✅ Saved 'player_vs_team_stats.csv' with player vs opponent team performance.")
 
 # Example usage:

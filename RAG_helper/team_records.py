@@ -66,7 +66,7 @@ def generate_team_record(csv_path):
         })
 
     df_result = pd.DataFrame(final_stats)
-    df_result.to_csv("IPL_Dataset//rag_knowledgebase//team_records1.csv", index=False)
+    df_result.to_csv("IPL_Dataset//rag_knowledgebase//team_records.csv", index=False)
     print("✅ team_record.csv generated successfully.")
 
 if __name__ == "__main__":

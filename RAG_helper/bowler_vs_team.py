@@ -51,7 +51,7 @@ def generate_bowler_vs_team_stats(csv_path):
         })
 
     df_result = pd.DataFrame(final_stats)
-    df_result.to_csv("IPL_Dataset//rag_knowledgebase//bowler_vs_teams.csv", index=False)
+    df_result.to_csv("IPL_Dataset//rag_knowledgebase//bowler_vs_teams1.csv", index=False)
     print("✅ Bowler vs Team stats saved successfully.")
 
 if __name__ == "__main__":

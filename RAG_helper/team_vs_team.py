@@ -49,7 +49,7 @@ def generate_team_vs_team_stats(csv_path):
         })
 
     result_df = pd.DataFrame(team_stats)
-    result_df.to_csv("IPL_Dataset/rag_knowledgebase/team_vs_team_summary1.csv", index=False)
+    result_df.to_csv("IPL_Dataset/rag_knowledgebase/team_vs_team_summary.csv", index=False)
     print("✅ team_vs_team_summary.csv generated successfully.")
 
 if __name__ == "__main__":

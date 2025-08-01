@@ -4,9 +4,12 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # === Configuration ===
-DATA_FOLDER = "ipl_dataset//rag_knowledgebase"
+DATA_FOLDER = "IPL_Dataset/rag_knowledgebase"
 VECTOR_STORE_PATH = "ipl_dataset/vectorstore"
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 

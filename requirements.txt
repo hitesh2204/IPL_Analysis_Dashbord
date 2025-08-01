@@ -13,3 +13,4 @@ langchain-community==0.0.35
 langchain-core==0.1.48
 huggingface_hub==0.20.3
 python-dotenv==1.0.1
+sentence-transformers
