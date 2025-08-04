@@ -14,6 +14,7 @@ from src.tournament_summary import tournament_summary_page
 from core.logger import setup_logger
 import matplotlib.pyplot as plt
 import os
+import traceback
 
 logger = setup_logger(__name__)
 
@@ -77,35 +78,107 @@ class IPLDashboard:
             logger.exception("Failed to display IPL overview.")
             st.error("An error occurred while loading the overview section.")
 
+     ### Batsman Record.
+    def get_batsman_record(self, batsman):
+        df = self.ipl[self.ipl['batter'] == batsman]
+        grouped = df.groupby('BowlingTeam')['batsman_run'].sum().sort_values(ascending=False).reset_index()
+        grouped['No_Of_fours'] = df[df['batsman_run'] == 4].groupby('BowlingTeam')['batsman_run'].count().reindex(grouped['BowlingTeam']).values
+        grouped['No_Of_sixes'] = df[df['batsman_run'] == 6].groupby('BowlingTeam')['batsman_run'].count().reindex(grouped['BowlingTeam']).values
+        grouped['ball_played'] = df.groupby('BowlingTeam')['ballnumber'].count().reindex(grouped['BowlingTeam']).values
+        grouped['Strike_rate'] = (grouped['batsman_run'] / grouped['ball_played']) * 100
+
+        total_runs = grouped['batsman_run'].sum()
+        grouped['Run %'] = (grouped['batsman_run'] / total_runs) * 100
+
+        return grouped
+
+    ## Bowller record.
+    def get_bowler_record(self, bowler):
+        df = self.ipl[self.ipl['bowler'] == bowler]
+
+        # Valid wickets only
+        wickets_df = df[(df['isWicketDelivery'] == 1) & (df['player_out'].notna()) & (df['player_out'] != '')]
+
+        # Total wickets per team
+        grouped = wickets_df.groupby('BattingTeam')['player_out'].count().sort_values(ascending=False).reset_index()
+        grouped.columns = ['BattingTeam', 'Wickets']
+
+        # Balls and runs for economy
+        grouped['Balls'] = df.groupby('BattingTeam')['ballnumber'].count().reindex(grouped['BattingTeam']).values
+        grouped['Runs'] = df.groupby('BattingTeam')['total_run'].sum().reindex(grouped['BattingTeam']).values
+        grouped['Economy'] = (grouped['Runs'] / grouped['Balls']) * 6
+
+        # 🔥 Best bowling in a match vs each team (wickets/runs)
+        match_stats = df.groupby(['BattingTeam', 'ID']).agg(
+            runs_in_match=('total_run', 'sum'),
+            balls_in_match=('ballnumber', 'count')
+        ).reset_index()
+
+        match_wickets = wickets_df.groupby(['BattingTeam', 'ID'])['player_out'].count().reset_index(name='wickets_in_match')
+
+        match_combined = pd.merge(match_stats, match_wickets, on=['BattingTeam', 'ID'], how='left').fillna(0)
+        match_combined['wickets_in_match'] = match_combined['wickets_in_match'].astype(int)
+
+        # Get best figures per team
+        best_figures = match_combined.sort_values(['BattingTeam', 'wickets_in_match', 'runs_in_match'], ascending=[True, False, True]) \
+                                 .drop_duplicates('BattingTeam')[['BattingTeam', 'wickets_in_match', 'runs_in_match']]
+
+        best_figures['Best Bowling'] = best_figures['wickets_in_match'].astype(str) + "/" + best_figures['runs_in_match'].astype(str)
+
+        # Merge with grouped
+        grouped = grouped.merge(best_figures[['BattingTeam', 'Best Bowling']], on='BattingTeam', how='left')
+
+        return grouped
+
     def team_analysis(self, team):
         try:
             logger.info(f"Performing analysis for team: {team}")
+
+            # Logo and header
             logo_path = f"image-video/{team.replace(' ', '_').lower()}.jpeg"
             col1, col2 = st.columns([1, 5])
             if os.path.exists(logo_path):
                 col1.image(Image.open(logo_path), width=100)
             col2.header(f"{team} Analysis", divider='rainbow')
 
-            players = list(self.ipl[self.ipl['BattingTeam'] == team]['batter'].unique())
+            # Player selection
+            players = list(self.ipl[self.ipl['BattingTeam'] == team]['batter'].dropna().unique())
+            if not players:
+                st.warning(f"No batting data found for team: {team}")
+                return
+
             col1, col2 = st.columns([2, 1])
             selected_player = col1.selectbox("Select Player", players)
+
+            # Display player image
             img_path = get_image_path(selected_player)
             if img_path:
                 col2.image(img_path, caption=selected_player, width=120)
 
+            # Batting Data
             batter_df = self.ipl[self.ipl['batter'] == selected_player]
             batting_summary = (
                 batter_df.groupby('BowlingTeam')
                 .agg(Matches=('ID', 'nunique'), Runs=('batsman_run', 'sum'), Balls=('ballnumber', 'count'))
                 .reset_index()
             )
-            batting_summary['Strike Rate'] = (batting_summary['Runs'] / batting_summary['Balls']) * 100
-            batting_summary['Run %'] = (batting_summary['Runs'] / batting_summary['Runs'].sum()) * 100
 
-            st.subheader(f"📊 Batting Record of {selected_player}")
-            st.dataframe(batting_summary, use_container_width=True)
+            if not batting_summary.empty:
+                batting_summary['Strike Rate'] = (batting_summary['Runs'] / batting_summary['Balls']) * 100
 
+                if batting_summary['Runs'].sum() > 0:
+                    batting_summary['Run %'] = (batting_summary['Runs'] / batting_summary['Runs'].sum()) * 100
+                else:
+                    batting_summary['Run %'] = 0
+
+                st.subheader(f"📊 Batting Record of {selected_player}")
+                st.dataframe(batting_summary, use_container_width=True)
+            else:
+                st.info(f"ℹ️ No batting data available for {selected_player}.")
+
+            # Bowling Data
             bowling_df = self.ipl[self.ipl['bowler'] == selected_player]
+            
             if not bowling_df.empty:
                 st.subheader(f"🎯 Bowling Record of {selected_player}")
 
@@ -125,6 +198,7 @@ class IPLDashboard:
             else:
                 st.info(f"ℹ️ {selected_player} has not bowled in the IPL data.")
 
+            # Pie Chart: Run % vs Each Team
             if not batting_summary.empty:
                 st.markdown(f"### 🥧 {selected_player} Run Contribution vs Each Team")
                 fig, ax = plt.subplots()
@@ -140,6 +214,7 @@ class IPLDashboard:
         except Exception as e:
             logger.exception(f"Error in team_analysis for {team}")
             st.error("Could not load team analysis. Please try another team.")
+
 
     def show_duel(self, batsman, bowler):
         try:
