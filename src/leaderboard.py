@@ -1,9 +1,9 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
-from logger import setup_logger
+from core.logger import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 def leaderboard_dashboard(ipl, season=None):
     try:

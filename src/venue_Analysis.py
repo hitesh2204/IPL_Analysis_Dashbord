@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 import streamlit as st
-from logger import setup_logger
+from core.logger import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 def venue_analysis_page(ipl):
     try:

@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 from src.utils import get_image_path
-from logger import setup_logger
+from core.logger import setup_logger
 import re
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 def player_detailed_comparison(ipl, bat1=None, bat2=None, bowl1=None, bowl2=None):
     try:

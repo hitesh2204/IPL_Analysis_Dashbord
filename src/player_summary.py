@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 from src.utils import get_image_path
 from src.data_loader import load_ipl_data
-from logger import setup_logger
+from core.logger import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 def player_summary_page(ipl):
     try:
