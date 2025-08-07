@@ -2,7 +2,7 @@ import pandas as pd
 from src.utils import normalize_team_name
 
 def get_playoff_performance(player_or_team_name: str, df: pd.DataFrame) -> str:
-    playoff_keywords = ['Qualifier', 'Eliminator', 'Final']
+    playoff_keywords = ['Qualifier 1', 'Eliminator', 'Final',' Semi Final', 'Semi Final', 'Qualifier 2', '3rd Place Play-Off']
 
     # Normalize team/player name
     player_or_team_name_normalized = normalize_team_name(player_or_team_name)

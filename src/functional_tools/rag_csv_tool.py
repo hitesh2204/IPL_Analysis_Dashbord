@@ -9,7 +9,7 @@ load_dotenv()
 VECTOR_STORE_PATH = "ipl_dataset/vectorstore"
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
-def get_rag_tool():
+def get_rag_tool(llm):
     embedding_model = HuggingFaceEmbeddings(model_name=MODEL_NAME)
     vectorstore = FAISS.load_local(
         VECTOR_STORE_PATH,
@@ -18,7 +18,7 @@ def get_rag_tool():
     )
 
     qa_chain = RetrievalQA.from_chain_type(
-        llm=st.session_state.llm,
+        llm=llm,
         retriever=vectorstore.as_retriever(),
         chain_type="stuff"
     )

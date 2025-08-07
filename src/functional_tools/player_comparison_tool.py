@@ -1,16 +1,8 @@
 import re
 import pandas as pd
 
-
-# 🧠 GENAI FUNCTION — Used by LangChain Agent
-def get_player_comparison(player_query: str, ipl_df) -> str:
-
-    # Extract player names
-    players = re.split(r",|\s+and\s+|\s+vs\s+", player_query, flags=re.IGNORECASE)
-    players = [p.strip() for p in players if p.strip()]
-    
-    if len(players) < 2:
-        return "❌ Please provide at least two player names to compare, like 'Kohli, Rohit and Dhoni'."
+def get_player_comparison(player1: str, player2: str, ipl_df) -> str:
+    players = [player1.strip(), player2.strip()]
 
     result = "🧍‍♂️ **IPL Player Comparison**\n\n"
 
@@ -38,8 +30,7 @@ def get_player_comparison(player_query: str, ipl_df) -> str:
         dismissals = bowling_df[bowling_df["isWicketDelivery"] == 1]
         total_wickets = dismissals["player_out"].notnull().sum()
         best_bowling = dismissals.groupby("ID")["player_out"].count().max() if not dismissals.empty else 0
-        five_wkts = dismissals.groupby("ID")["player_out"].count()
-        five_wkt_hauls = (five_wkts >= 5).sum()
+        five_wkt_hauls = (dismissals.groupby("ID")["player_out"].count() >= 5).sum()
 
         # Teams and matches
         teams = set(batting_df['BattingTeam'].dropna().unique()) | set(bowling_df['BowlingTeam'].dropna().unique())

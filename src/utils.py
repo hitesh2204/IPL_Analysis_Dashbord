@@ -7,6 +7,7 @@ import streamlit as st
 import time
 import re
 from core.logger import setup_logger
+from difflib import get_close_matches
 
 logger = setup_logger(__name__)
 
@@ -75,8 +76,8 @@ def try_autoplay_video():
 TEAM_NAME_ALIASES = {
     'CSK': 'Chennai Super Kings', 
     'CHENNAI SUPER KINGS': 'Chennai Super Kings',
-    'RCB': 'Royal Challengers Bangalore', 
-    'ROYAL CHALLENGERS BANGALORE': 'Royal Challengers Bangalore',
+    'RCB': 'Royal Challengers Bengaluru', 
+    'ROYAL CHALLENGERS BANGALURU': 'Royal Challengers Bengaluru',
     'MI': 'Mumbai Indians', 
     'MUMBAI INDIANS': 'Mumbai Indians',
     'KKR': 'Kolkata Knight Riders', 
@@ -105,6 +106,7 @@ TEAM_NAME_ALIASES = {
     'DECCAN CHARGERS': 'Deccan Chargers'
 }
 
+## Normalize all teams name.
 def normalize_team_name(name):
     try:
         name_upper = name.strip().upper()
@@ -114,3 +116,23 @@ def normalize_team_name(name):
     except Exception as e:
         logger.exception(f"Error normalizing team name: {name} | Error: {e}")
         return name
+    
+
+### Fuzzy Player name
+
+def get_normalized_player_name(user_input: str, player_names: list) -> str:
+    """
+    Fuzzy match user input to the closest player full name from dataset.
+    """
+    user_input = user_input.strip().lower()
+
+    player_name_map = {name.lower(): name for name in player_names}
+    lower_names = list(player_name_map.keys())
+
+    matches = get_close_matches(user_input, lower_names, n=1, cutoff=0.6)
+
+    if matches:
+        matched_name = player_name_map[matches[0]]
+        return matched_name
+    else:
+        return None
