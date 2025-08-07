@@ -51,6 +51,11 @@ def generate_venue_stats(df):
         total_sixes = temp[temp["batsman_run"] == 6].shape[0]
         total_runs = temp["total_run"].sum()
 
+        # 🆕 Calculate fifties & hundreds
+        player_scores = temp.groupby(["ID", "batter"])["batsman_run"].sum()
+        total_hundreds = (player_scores >= 100).sum()
+        total_fifties = ((player_scores >= 50) & (player_scores < 100)).sum()
+
         top_batsmen = (
             temp.groupby("batter")["batsman_run"]
             .sum()
@@ -83,6 +88,8 @@ def generate_venue_stats(df):
             "total_fours": total_fours,
             "total_sixes": total_sixes,
             "total_runs": total_runs,
+            "total_hundreds": total_hundreds,   # 🆕
+            "total_fifties": total_fifties,     # 🆕
             "top_5_batsmen": top_batsmen.to_dict("records"),
             "top_5_bowlers": top_bowlers.to_dict("records")
         })
@@ -90,7 +97,6 @@ def generate_venue_stats(df):
     return pd.DataFrame(venue_stats)
 
 if __name__ == "__main__":
-    df = pd.read_csv("IPL_Dataset//final_ipl.csv",encoding='ISO-8859-1') 
+    df = pd.read_csv("IPL_Dataset/final_ipl.csv", encoding='ISO-8859-1') 
     venue_df = generate_venue_stats(df)             
-    venue_df.to_csv("IPL_Dataset//rag_knowledgebase//venue_stats.csv", index=False)
-
+    venue_df.to_csv("IPL_Dataset/rag_knowledgebase/venue_stats.csv", index=False)
