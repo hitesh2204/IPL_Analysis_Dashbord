@@ -27,3 +27,5 @@ def get_pair_stats(player1, player2, season=None):
                     - Season: {season or 'Overall'}"""
 
     return pair_stats
+
+
