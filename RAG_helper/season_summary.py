@@ -1,8 +1,7 @@
 import pandas as pd
+from src.data_loader import load_ipl_data
 
-def generate_season_summary(csv_path, output_path):
-    # Load IPL dataset
-    df = pd.read_csv(csv_path, encoding='ISO-8859-1')
+def generate_season_summary(df):
 
     summary = []
 
@@ -22,13 +21,13 @@ def generate_season_summary(csv_path, output_path):
         highest_score_runs = top_score_row['total_run']
         highest_score_match_id = top_score_row['ID']
 
-        # Top batsman
+        # Top batsman (Orange Cap)
         top_batsman_stats = season_df.groupby('batter')['batsman_run'].sum().reset_index()
         top_batsman_stats = top_batsman_stats.sort_values(by='batsman_run', ascending=False).head(1)
         top_batsman = top_batsman_stats.iloc[0]['batter']
         top_batsman_runs = top_batsman_stats.iloc[0]['batsman_run']
 
-        # Top bowler
+        # Top bowler (Purple Cap)
         top_bowler_stats = season_df[season_df['isWicketDelivery'] == 1].groupby('bowler')['player_out'].count().reset_index()
         top_bowler_stats = top_bowler_stats.sort_values(by='player_out', ascending=False).head(1)
         top_bowler = top_bowler_stats.iloc[0]['bowler']
@@ -54,15 +53,19 @@ def generate_season_summary(csv_path, output_path):
             'Top Batsman Runs': top_batsman_runs,
             'Top Bowler': top_bowler,
             'Top Bowler Wickets': top_bowler_wickets,
+            'Orange Cap Winner': top_batsman,  # 🆕
+            'Purple Cap Winner': top_bowler,   # 🆕
             'Season Winner': winner
         })
 
     summary_df = pd.DataFrame(summary)
 
     # Save to CSV
-    summary_df.to_csv(output_path, index=False)
-    print(f"✅ Season summary saved to: {output_path}")
+    summary_df.to_csv("IPL_Dataset//rag_knowledgebase//season_summary_final1.csv", index=False)
+    print(f"✅ Season summary saved to:")
+
 
 # Example usage
 if __name__=="__main__":
-    generate_season_summary("IPL_Dataset/final_ipl.csv", "IPL_Dataset/rag_knowledgebase/season_summary_final.csv")
+    ipl = load_ipl_data()
+    generate_season_summary(ipl)
