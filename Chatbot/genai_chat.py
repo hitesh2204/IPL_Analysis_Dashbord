@@ -17,4 +17,4 @@ def genai_chat_tab():
 
         with st.spinner("Thinking..."):
             response = run_ipl_agent(prompt)
-            st.markdown(response, unsafe_allow_html=True)
+            st.write(response, unsafe_allow_html=True)

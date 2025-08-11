@@ -2,19 +2,14 @@
 import os
 from dotenv import load_dotenv
 from langchain.agents import initialize_agent, AgentType
-from langchain_openai import ChatOpenAI  
+from Chatbot.llm import load_llm 
 from Chatbot.tool import all_tools  
 
 #  Load environment variables#
 load_dotenv()
 
-# Load Ollama LLaMA 3 model
-llm = ChatOpenAI(
-    model="gpt-3.5-turbo",
-    #temperature=0.7,  # Optional: Controls randomness
-    #api_key=os.getenv("OPENAI_API_KEY")
-)
-
+# Load gpt-3.5 model
+llm = load_llm()
 
 # ✅ Initialize LangChain Agent with your tools and LLaMA3
 agent = initialize_agent(

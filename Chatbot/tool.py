@@ -11,18 +11,17 @@ from src.functional_tools.player_vs_team_tool import get_player_vs_team_summary
 from src.functional_tools.phase_wise_tool import get_phase_wise_performance
 from src.functional_tools.playoff_tool import get_playoff_performance
 from src.functional_tools.pair_stats_tool import get_pair_stats
-from src.functional_tools.record_finder_tool import get_record_finder
 from src.functional_tools.advance_leaderboard_tool import get_filtered_leaderboard
 from src.functional_tools.rag_csv_tool import get_rag_tool
 from src.utils import get_normalized_player_name  
 import pandas as pd
 from src.data_loader import load_ipl_data
-from langchain_openai import ChatOpenAI 
+from Chatbot.llm import load_llm 
 import streamlit as st
 import re
 
 ## importing llm model
-llm = ChatOpenAI(model="gpt-3.5-turbo")
+llm = load_llm()
 
 # Load IPL data globally
 ipl = load_ipl_data()
@@ -325,6 +324,12 @@ def get_playoff_performance_tool(player_or_team_name: str) -> str:
 
 
 # 👬 PAIR STATS TOOL
+from src.data_loader import load_ipl_data
+from src.utils import get_normalized_player_name  # make sure this exists
+from src.functional_tools.pair_stats_tool import get_pair_stats
+
+ipl = load_ipl_data()
+
 @tool
 def get_pair_stats_tool(query: str) -> str:
     """
@@ -333,77 +338,32 @@ def get_pair_stats_tool(query: str) -> str:
     Input Format:
     - "<Player1> and <Player2> in <Season>" (e.g., "Rohit Sharma and Virat Kohli in 2020")
     - Or just "<Player1> and <Player2>" for all seasons
-
-    Output:
-    - Matches Played Together
-    - Total runs scored together
-    - Average runs per ball
-    - Balls Faced Together
-    - Season-specific breakdown (if provided)
     """
     try:
+        import re
+
         # Regex to extract players & optional season
         pattern = r"(.+?)\s+and\s+(.+?)(?:\s+in\s+(\d{4}))?$"
         match = re.search(pattern, query.strip(), re.IGNORECASE)
 
         if not match:
-            return "Invalid format. Use: '<Player1> and <Player2> in <season>' or without season."
+            return "❌ Invalid format. Use: '<Player1> and <Player2> in <season>' or just '<Player1> and <Player2>'"
 
         raw_player1 = match.group(1).strip()
         raw_player2 = match.group(2).strip()
         season = match.group(3).strip() if match.group(3) else None
 
-        # Normalize player names to match dataset exactly
-        player1 = get_normalized_player_name(raw_player1)
-        player2 = get_normalized_player_name(raw_player2)
+        # Prepare list of all unique player names
+        player_names = sorted(set(ipl["batter"].unique().tolist() + ipl["non-striker"].unique().tolist()))
+
+        # Normalize names
+        player1 = get_normalized_player_name(raw_player1, player_names)
+        player2 = get_normalized_player_name(raw_player2, player_names)
 
         return get_pair_stats(player1, player2, season)
 
     except Exception as e:
-        return f"Error fetching pair stats: {str(e)}"
-
-## Record finder TOOL.
-@tool
-def get_record_finder_tool(query: str) -> str:
-    """
-    Find specific IPL records like 'fastest fifty', 'highest score', 'best bowling' etc.
-    Filters:
-    - season: optional (e.g., 2020)
-    - match_type: 'league', 'playoffs', 'final'
-    - phase: 'powerplay', 'middle', 'death'
-    - venue: stadium name
-
-    Example queries:
-    - "Fastest fifty in 2020"
-    - "Best bowling in final"
-    - "Highest score in death overs at Wankhede"
-    """
-    import re
-    season = None
-    match_type = None
-    phase = None
-    venue = None
-
-    if m := re.search(r"(\d{4})", query):
-        season = m.group(1)
-    if "final" in query.lower():
-        match_type = "final"
-    elif "playoffs" in query.lower():
-        match_type = "playoffs"
-    if "powerplay" in query.lower():
-        phase = "powerplay"
-    elif "middle" in query.lower():
-        phase = "middle"
-    elif "death" in query.lower():
-        phase = "death"
-
-    # Extract venue (last part after 'at')
-    if " at " in query.lower():
-        venue = query.split(" at ")[-1].strip()
-
-    record_type = query.split(" in ")[0].strip()
-
-    return get_record_finder(record_type, season, match_type, phase, venue)
+        return f"❌ Error fetching pair stats: {str(e)}"
 
 ## Advance leaderboard Tool.
 @tool
@@ -497,6 +457,7 @@ def get_rag_csv_tool(query: str) -> str:
 
 # ✅ Export all tools for agent
 all_tools = [
+    get_rag_csv_tool,
     get_leaderboard_summary_tool,
     get_player_summary_tool,
     get_team_vs_team_summary_tool,
@@ -508,7 +469,6 @@ all_tools = [
     get_phase_wise_performance_tool,
     get_playoff_performance_tool,
     get_pair_stats_tool,
-    get_record_finder_tool,
     get_advance_leaderboard_tool,
-    get_rag_csv_tool
+   
 ]
