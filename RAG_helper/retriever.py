@@ -1,60 +1,64 @@
+
 import os
 import pandas as pd
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_core.documents import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # === Configuration ===
-DATA_FOLDER = "IPL_Dataset/rag_knowledgebase"
-VECTOR_STORE_PATH = "ipl_dataset/vectorstore"
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+DATA_FOLDER = "IPL_Dataset/rag_knowledgebase"   # Folder containing all CSVs
+VECTOR_STORE_PATH = "IPL_Dataset/vectorstore"
+EMBEDDING_MODEL_NAME = "text-embedding-3-large"
 
-# === Load embedding model ===
-embedding_model = HuggingFaceEmbeddings(model_name=MODEL_NAME)
+# === Convert a single CSV into Documents (row-based) ===
+def load_csv_as_docs(file_path: str):
+    df = pd.read_csv(file_path)
+    docs = []
+    for _, row in df.iterrows():
+        # Combine row into text, skip NaN values
+        row_text = " | ".join([f"{col}: {row[col]}" for col in df.columns if pd.notna(row[col])])
 
-def load_and_process_csvs(data_folder: str):
-    """
-    Reads all CSV files in the folder and converts rows to text-based Documents.
-    """
-    documents = []
-    for filename in os.listdir(data_folder):
-        if filename.endswith(".csv"):
-            filepath = os.path.join(data_folder, filename)
-            df = pd.read_csv(filepath)
+        # Save row-level metadata
+        metadata = {"source_file": os.path.basename(file_path)}
+        for col in df.columns:
+            val = row[col]
+            if pd.notna(val):
+                # Normalize metadata: lowercase strings, keep numbers as-is
+                metadata[col] = str(val).strip().lower() if isinstance(val, str) else val
 
-            for i, row in df.iterrows():
-                row_text = " | ".join(f"{col}: {row[col]}" for col in df.columns if pd.notnull(row[col]))
-                metadata = {
-                    "source": filename,
-                    "row": i
-                }
-                documents.append(Document(page_content=row_text, metadata=metadata))
-    
-    return documents
+        docs.append(Document(page_content=row_text, metadata=metadata))
+    return docs
 
+# === Load all CSVs ===
+def load_and_process_csvs():
+    all_docs = []
+    for file in os.listdir(DATA_FOLDER):
+        if file.endswith(".csv"):
+            file_path = os.path.join(DATA_FOLDER, file)
+            all_docs.extend(load_csv_as_docs(file_path))
+    return all_docs
+
+# === Build & Save Vectorstore ===
 def create_vectorstore():
     print("🔍 Loading CSVs and processing into documents...")
-    docs = load_and_process_csvs(DATA_FOLDER)
+    documents = load_and_process_csvs()
+    print(f"📄 Total documents created: {len(documents)}")
 
-    print(f"📄 Total documents created: {len(docs)}")
-
-    print("🧱 Splitting documents into chunks...")
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    split_docs = splitter.split_documents(docs)
-
-    print(f"🧠 Total chunks after splitting: {len(split_docs)}")
+    embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL_NAME)
 
     print("🚀 Generating embeddings and creating FAISS vectorstore...")
-    vectorstore = FAISS.from_documents(split_docs, embedding_model)
-
+    vectorstore = FAISS.from_documents(documents, embeddings)
+    
     print(f"💾 Saving vectorstore to {VECTOR_STORE_PATH}...")
     vectorstore.save_local(VECTOR_STORE_PATH)
 
-    print("✅ Vectorstore created and saved successfully.")
+    print(f"✅ Vectorstore created and saved at {VECTOR_STORE_PATH}")
 
 if __name__ == "__main__":
     create_vectorstore()
+
+
+
