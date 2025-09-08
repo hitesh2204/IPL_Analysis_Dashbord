@@ -8,7 +8,7 @@ from Chatbot.tool import all_tools
 #  Load environment variables#
 load_dotenv()
 
-# Load gpt-3.5 model
+# Load gpt-4o model
 llm = load_llm()
 
 # ✅ Initialize LangChain Agent with your tools and LLaMA3

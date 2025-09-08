@@ -1,19 +1,19 @@
 from langchain.agents import tool
-from src.utils import normalize_team_name  
 from src.functional_tools.player_summary_tool import get_player_summary
 from src.functional_tools.team_vs_team_tool import get_team_vs_team_summary
 from src.functional_tools.player_comparison_tool import get_player_comparison
 from src.functional_tools.venue_analysis_tool import get_venue_summary
 from src.functional_tools.tournament_summary_tool import get_tournament_summary
 from src.functional_tools.leaderboard_tool import get_leaderboard_summary
-from src.functional_tools.powerplay_tool import get_powerplay_summary
 from src.functional_tools.player_vs_team_tool import get_player_vs_team_summary
 from src.functional_tools.phase_wise_tool import get_phase_wise_performance
 from src.functional_tools.playoff_tool import get_playoff_performance
 from src.functional_tools.pair_stats_tool import get_pair_stats
-from src.functional_tools.advance_leaderboard_tool import get_filtered_leaderboard
 from src.functional_tools.rag_csv_tool import get_rag_tool
 from src.utils import get_normalized_player_name  
+from src.utils import normalize_venue_name
+from src.utils import normalize_team_name  
+from src.utils import extract_stat
 import pandas as pd
 from src.data_loader import load_ipl_data
 from Chatbot.llm import load_llm 
@@ -22,11 +22,12 @@ import re
 
 ## importing llm model
 llm = load_llm()
+qa_chain = get_rag_tool(llm)
 
 # Load IPL data globally
 ipl = load_ipl_data()
 
-# 📊 PLAYER TEXT SUMMARY TOOL
+# PLAYER TEXT SUMMARY TOOL
 @tool
 def get_player_summary_tool(player_name: str) -> str:
     """
@@ -47,11 +48,11 @@ def get_player_summary_tool(player_name: str) -> str:
     normalized_name = get_normalized_player_name(player_name, all_players)
 
     if not normalized_name:
-        return f"No close match found for '{player_name}'. Try a more accurate or complete name."
+        return f"Error: No close match found for '{player_name}'. Try a more accurate or complete name."
+
 
     # Call your existing summary function
     return get_player_summary(normalized_name)
-
 
 # Team vs Team analysis.
 @tool
@@ -73,11 +74,10 @@ def get_team_vs_team_summary_tool(query: str) -> str:
     Example usage:
     "Show MI vs CSK summary".
     """
-    import re
     teams = re.findall(r"(RCB|MI|CSK|RR|SRH|GT|LSG|KKR|PBKS|DC)", query, re.IGNORECASE)
 
     if len(teams) < 2:
-        return "Please provide two valid IPL teams in your query like 'Show MI vs CSK summary'."
+        return "Error:Please provide two valid IPL teams in your query like 'Show MI vs CSK summary'."
 
     team1_raw, team2_raw = teams[0], teams[1]
     team1 = normalize_team_name(team1_raw)
@@ -101,19 +101,18 @@ def get_player_comparison_tool(player1: str, player2: str) -> str:
 
     # Handle unmatched names
     if not player1_normalized:
-        return f"❌ Could not find player matching '{player1}'"
+        return f"Error:Could not find player matching '{player1}'"
     if not player2_normalized:
-        return f"❌ Could not find player matching '{player2}'"
+        return f"Error:Could not find player matching '{player2}'"
 
     # Handle duplicate normalized results
     if player1_normalized == player2_normalized:
-        return f"❌ Both inputs refer to the same player: {player1_normalized}"
+        return f"Both inputs refer to the same player: {player1_normalized}"
 
     return get_player_comparison(player1_normalized, player2_normalized, ipl)
 
 
-
-# 🏟️ VENUE ANALYSIS TOOL
+# VENUE ANALYSIS TOOL
 @tool
 def get_venue_summary_tool(venue_query: str) -> str:
     """Retrieve IPL match statistics for a specific venue.
@@ -137,7 +136,7 @@ def get_venue_summary_tool(venue_query: str) -> str:
     """
     return get_venue_summary(ipl, venue_query)
 
-# 🧾 TOURNAMENT OVERVIEW TOOL
+# TOURNAMENT OVERVIEW TOOL
 @tool
 def get_tournament_summary_tool(season_query: str) -> str:
     """Return a high-level summary of an IPL season or all seasons.
@@ -157,7 +156,7 @@ def get_tournament_summary_tool(season_query: str) -> str:
     """
     return get_tournament_summary(season_query, ipl)
 
-# 🏆 LEADERBOARD TOOL
+# LEADERBOARD TOOL
 @tool
 def get_leaderboard_summary_tool(query: str) -> str:
     """Return top-performing batsmen or bowlers in a specific IPL season or across all seasons.
@@ -175,41 +174,6 @@ def get_leaderboard_summary_tool(query: str) -> str:
     - "2020 leaderboard for batsmen"
     """
     return get_leaderboard_summary(query, ipl)
-
-# 🔋 POWERPLAY TOOL
-@tool
-def get_powerplay_stats_tool(entity_name: str, season: int = None) -> str:
-    """
-    Calculates batting/bowling stats for overs 1–6 (Powerplay) for teams or players.
-
-    Input:
-    - entity_name (str): Team or player name (full or partial)
-    - season (int, optional): IPL season year (e.g., 2020)
-
-    Output:
-    - Batting & bowling stats in powerplay for given team/player.
-
-    Examples:
-    - "Mumbai Indians", 2020
-    - "Virat Kohli"
-    """
-    # Get all unique teams & players for normalization
-    all_teams = ipl["BattingTeam"].unique().tolist() + ipl["BowlingTeam"].unique().tolist()
-    all_players = ipl["batter"].unique().tolist() + ipl["bowler"].unique().tolist()
-
-    # Normalize input
-    normalized_team = get_normalized_player_name(entity_name, all_teams)
-    normalized_player = get_normalized_player_name(entity_name, all_players)
-
-    if normalized_team:
-        final_name = normalized_team
-    elif normalized_player:
-        final_name = normalized_player
-    else:
-        return f"❌ No match found for '{entity_name}'"
-
-    # Call the core function
-    return get_powerplay_summary(final_name, ipl, season)
 
 
 # Player vs Team Tool
@@ -229,11 +193,9 @@ def get_player_vs_team_tool(query: str) -> str:
     Output:
     - Batting and bowling stats of the player against the specified opponent.
     """
-    import re
-
     match = re.match(r"(.+?)\s+vs\s+(.+?)(?:\s+in\s+(\d{4}))?$", query.strip(), re.IGNORECASE)
     if not match:
-        return "Invalid format. Use 'Player vs Team in Season' format."
+        return "Error:Invalid format. Use 'Player vs Team in Season' format."
 
     # Raw extracted names
     raw_player_name = match.group(1).strip()
@@ -241,13 +203,15 @@ def get_player_vs_team_tool(query: str) -> str:
     season = int(match.group(3)) if match.group(3) else None
 
     # Normalize player name
-    all_players = ipl["batter"].unique().tolist()
+    all_players = set(ipl["batter"]).union(set(ipl["bowler"]))
     player_name = get_normalized_player_name(raw_player_name, all_players)
     if not player_name:
-        return f"❌ Player '{raw_player_name}' not found in dataset."
+        return f"Error:Player '{raw_player_name}' not found in dataset."
 
     # Normalize team name
     team_name = normalize_team_name(raw_team_name)
+    if not team_name:
+        return f"Error: Team '{raw_team_name}' not recognized"
 
     return get_player_vs_team_summary(player_name, team_name, season, ipl)
 
@@ -256,7 +220,7 @@ def get_player_vs_team_tool(query: str) -> str:
 @tool
 def get_phase_wise_performance_tool(query: str) -> str:
     """
-    trieve a player's batting and/or bowling performance during a specific phase of an IPL match.
+    Retrieve a player's batting and/or bowling performance during a specific phase of an IPL match.
 
     Accepted Phases:
     - Powerplay (Overs 1-6)
@@ -277,7 +241,7 @@ def get_phase_wise_performance_tool(query: str) -> str:
     """
     match = re.match(r"(.+?)\s+in\s+([\w\s]+?)(?:\s+in\s+(\d{4}))?$", query.strip(), re.IGNORECASE)
     if not match:
-        return "❌ Invalid format. Use: 'PlayerName in Phase [in Season]'"
+        return "Error:Invalid format. Use: 'PlayerName in Phase [in Season]'"
 
     player_name = match.group(1).strip()
     phase = match.group(2).strip().lower()
@@ -320,16 +284,9 @@ def get_playoff_performance_tool(player_or_team_name: str) -> str:
     if normalized_team:
         return get_playoff_performance(normalized_team, ipl)
 
-    return f"❌ '{player_or_team_name}' not found as a player or team in the dataset."
+    return f"Error:'{player_or_team_name}' not found as a player or team in the dataset."
 
-
-# 👬 PAIR STATS TOOL
-from src.data_loader import load_ipl_data
-from src.utils import get_normalized_player_name  # make sure this exists
-from src.functional_tools.pair_stats_tool import get_pair_stats
-
-ipl = load_ipl_data()
-
+## Get pair stats tool
 @tool
 def get_pair_stats_tool(query: str) -> str:
     """
@@ -340,14 +297,12 @@ def get_pair_stats_tool(query: str) -> str:
     - Or just "<Player1> and <Player2>" for all seasons
     """
     try:
-        import re
-
         # Regex to extract players & optional season
         pattern = r"(.+?)\s+and\s+(.+?)(?:\s+in\s+(\d{4}))?$"
         match = re.search(pattern, query.strip(), re.IGNORECASE)
 
         if not match:
-            return "❌ Invalid format. Use: '<Player1> and <Player2> in <season>' or just '<Player1> and <Player2>'"
+            return "Error:Invalid format. Use: '<Player1> and <Player2> in <season>' or just '<Player1> and <Player2>'"
 
         raw_player1 = match.group(1).strip()
         raw_player2 = match.group(2).strip()
@@ -363,101 +318,35 @@ def get_pair_stats_tool(query: str) -> str:
         return get_pair_stats(player1, player2, season)
 
     except Exception as e:
-        return f"❌ Error fetching pair stats: {str(e)}"
-
-## Advance leaderboard Tool.
-@tool
-def get_advance_leaderboard_tool(query: str) -> str:
-    """
-    Generate top-N leaderboards for players or teams with filters.
-
-    Example queries:
-    - "Top 5 players with best SR in death overs in IPL 2023"
-    - "Teams with highest win % at Wankhede"
-    - "Top 3 MI players in powerplay in 2022"
-    """
-    import re
-    season = None
-    phase = None
-    venue = None
-    top_n = 5
-    entity_type = "player"
-    filter_entity = None  # optional: specific player or team filter
-
-    # Extract season
-    if m := re.search(r"(\d{4})", query):
-        season = m.group(1)
-
-    # Extract phase
-    if "powerplay" in query.lower():
-        phase = "powerplay"
-    elif "middle" in query.lower():
-        phase = "middle"
-    elif "death" in query.lower():
-        phase = "death"
-
-    # Extract venue
-    if " at " in query.lower():
-        venue_raw = query.split(" at ")[-1].strip()
-        venue = normalize_team_name(venue_raw)  # This can normalize stadium/team names if mapped
-
-    # Detect entity type
-    if "team" in query.lower():
-        entity_type = "team"
-    if m := re.search(r"top\s+(\d+)", query.lower()):
-        top_n = int(m.group(1))
-
-    # Stat type
-    if "strike rate" in query.lower():
-        stat = "strike rate"
-    elif "win %" in query.lower():
-        stat = "win %"
-    else:
-        return "Please specify a stat like 'strike rate' or 'win %'."
-
-    # Optional: normalize player/team filters if mentioned
-    all_players = ipl["batter"].unique().tolist()
-    all_teams = ipl["BattingTeam"].unique().tolist()
-
-    # If a player name is given in query
-    for name in all_players:
-        if name.lower() in query.lower():
-            filter_entity = get_normalized_player_name(name, all_players)
-            break
-
-    # If a team name is given in query
-    for t in all_teams:
-        if t.lower() in query.lower():
-            filter_entity = normalize_team_name(t)
-            break
-
-    return get_filtered_leaderboard(stat, top_n, season, phase, entity_type, venue)
-
+        return f"Error: fetching pair stats: {str(e)}"
 
 ## CSV-RAG tool
 @tool
 def get_rag_csv_tool(query: str) -> str:
-    """Answer IPL-related natural language questions using a Retrieval-Augmented Generation (RAG) system.
+    """
+    Answer IPL-related natural language questions using a Retrieval-Augmented Generation (RAG) system.
 
-    This tool uses a FAISS vector store built from IPL CSV data and a language model to retrieve and generate answers.
+    Uses a FAISS vector store built from IPL CSV data and a language model to retrieve and generate answers.
 
-     How it works:
-    - Embeds the IPL dataset into a FAISS vector store
-    - Uses the query to retrieve relevant chunks
-    - Passes them to an LLM to generate a contextual answer
-
-     Example queries:
+    Example queries:
     - "Who scored the most runs for RCB in 2016?"
     - "Which team won the most matches at Wankhede Stadium?"
     - "Top scorers against CSK in playoffs"
     - "Best bowling figures by Bumrah in 2020"
     """
-    qa_chain = get_rag_tool(llm)
-    return qa_chain.run(query)
+    if not query or not query.strip():
+        return "Error: Query cannot be empty."
+
+    try:
+        response = qa_chain.invoke({"query": query})
+        result = response.get("result")
+        return result if result else "Error: No answer found."
+    except Exception as e:
+        return f"Error: RAG system failed -> {str(e)}"
+
 
 # ✅ Export all tools for agent
 all_tools = [
-    get_rag_csv_tool,
     get_leaderboard_summary_tool,
     get_player_summary_tool,
     get_team_vs_team_summary_tool,
@@ -469,6 +358,5 @@ all_tools = [
     get_phase_wise_performance_tool,
     get_playoff_performance_tool,
     get_pair_stats_tool,
-    get_advance_leaderboard_tool,
-   
+    get_rag_csv_tool
 ]
