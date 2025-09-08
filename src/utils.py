@@ -6,8 +6,10 @@ from PIL import Image
 import streamlit as st
 import time
 import re
+import pandas as pd
 from core.logger import setup_logger
 from difflib import get_close_matches
+from langchain_core.documents import Document
 
 logger = setup_logger(__name__)
 
@@ -136,3 +138,76 @@ def get_normalized_player_name(user_input: str, player_names: list) -> str:
         return matched_name
     else:
         return None
+
+### normalized venue name
+
+def normalize_venue_name(venue: str) -> str:
+    """
+    Normalize IPL venue names to handle variations and make queries more consistent.
+
+    Args:
+        venue (str): Raw venue name from dataset or user query.
+
+    Returns:
+        str: Normalized venue name (standardized).
+    """
+    if not venue:
+        return ""
+
+    venue = venue.strip().lower()
+
+    # Mapping of common aliases / variations → standard names
+    mapping = {
+        "chinnaswamy": "M Chinnaswamy Stadium",
+        "m chinnaswamy": "M Chinnaswamy Stadium",
+        "is bindra": "Punjab Cricket Association IS Bindra Stadium",
+        "mohali": "Punjab Cricket Association IS Bindra Stadium",
+        "feroz shah kotla": "Feroz Shah Kotla",
+        "arun jaitley": "Arun Jaitley Stadium",
+        "wankhede": "Wankhede Stadium",
+        "eden gardens": "Eden Gardens",
+        "sawai mansingh": "Sawai Mansingh Stadium",
+        "rajiv gandhi": "Rajiv Gandhi International Stadium",
+        "ma chidambaram": "MA Chidambaram Stadium",
+        "chepauk": "MA Chidambaram Stadium",
+        "dy patil": "Dr DY Patil Sports Academy",
+        "vidarbha": "Vidarbha Cricket Association Stadium, Jamtha",
+        "nagpur": "Vidarbha Cricket Association Stadium, Jamtha",
+        "hpca": "Himachal Pradesh Cricket Association Stadium",
+        "dharamsala": "Himachal Pradesh Cricket Association Stadium",
+        "nehru stadium": "Nehru Stadium",
+        "holkar": "Holkar Cricket Stadium",
+        "vdca": "ACA VDCA Cricket Stadium",
+        "visakhapatnam": "ACA VDCA Cricket Stadium",
+        "subrata roy": "Subrata Roy Sahara Stadium",
+        "pune": "Maharashtra Cricket Association Stadium",
+        "maharashtra cricket": "Maharashtra Cricket Association Stadium",
+        "ekana": "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow",
+        "lucknow": "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow",
+        "barsapara": "Barsapara Cricket Stadium, Guwahati",
+        "guwahati": "Barsapara Cricket Stadium, Guwahati",
+        "mullanpur": "Maharaja Yadavindra Singh International Cricket Stadium",
+    }
+
+    # Try to find a match by keyword
+    for key, standard in mapping.items():
+        if re.search(rf"\b{key}\b", venue):
+            return standard
+
+    # If no mapping found, return title-cased version
+    return venue.title()
+
+
+# extract stats,win percentage,economy,average.
+def extract_stat(query: str) -> str:
+    stat_map = {
+        "strike rate": ["strike rate", "sr"],
+        "win %": ["win %", "win percentage", "winning %"],
+        "average": ["average", "avg"],
+        "economy": ["economy", "eco"]
+    }
+
+    for key, patterns in stat_map.items():
+        if any(p in query.lower() for p in patterns):
+            return key
+    return None
