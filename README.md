@@ -14,49 +14,42 @@ This project bridges that gap by building a RAG-based GenAI application that com
 
 🤖 GenAI Chat Assistant → Natural language Q&A powered by LLM + RAG
 
+-------------------------------------------------------------------------------------------
+
 🔎 Features
 1️⃣ Manual Analysis Dashboards
 
 Explore IPL history through structured, interactive analysis:
 
 📊 Overall IPL Analysis → Teams, winners, historical trends
-
 🏏 Team Analysis → Team-wise batting & bowling performance
-
 👥 Player Summary → Career details with tables + graphs
-
 ⚔️ Player vs Bowler → Head-to-head records
-
 🆚 Team vs Team → Comparative match history
-
 🏆 Leaderboards → Season-wise top performers
-
 🏟️ Venue Analysis → Matches, runs, wickets, 4s/6s by venue
-
 🔄 Player Comparison → Compare two players side by side
-
 🎯 Tournament Summary → Champions, orange/purple caps
 
 👉 These are deterministic, structured functions ensuring accuracy.
+
+-------------------------------------------------------------------------------------------
 
 2️⃣ GenAI Chat Assistant
 
 A conversational agent that answers simple, tricky, and complex IPL queries.
 
 ✅ Structured queries → answered using Python functions/tools
-
 ✅ Unstructured queries → answered using RAG over 15 curated CSVs
+
+--------------------------------------------------------------------------------------------
 
 ⚙️ Tech Stack & Architecture
 
 LLM & Embeddings → OpenAI GPT + text-embedding-3-large
-
 Framework → LangChain (tool routing + RAG pipeline)
-
 Database → FAISS (vector store for embeddings)
-
 Frontend/UI → Streamlit
-
 Backend Logic → Python tools for structured stats queries
 
 Query Flow
@@ -75,6 +68,8 @@ LangChain Agent
      Combine + Answer            Combine + Answer
                 ↓
       Streamlit UI (chat + graphs)
+
+----------------------------------------------------------------------------------------
 
 ⚡ Setup & Installation
 # Clone repo
@@ -99,15 +94,18 @@ Try asking:
 
 “Show me Dhoni’s boundary stats in 2012.”
 
+------------------------------------------------------------------------------------------
+
 🚀 Future Enhancements
 
 ⚡ Add FastAPI backend for production APIs
-
 📱 Deploy as web + mobile app
-
 📊 Expand dataset with live IPL feeds for real-time insights
 
+--------------------------------------------------------------------------------------------
+
 📂 Final Folder Structure – GenAI IPL App
+
 ipl_genai_app/
 ├── Chatbot/
 │   ├── llm.py                    # Load OpenAI model
