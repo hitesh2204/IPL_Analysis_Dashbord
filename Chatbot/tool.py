@@ -353,7 +353,6 @@ all_tools = [
     get_player_comparison_tool,
     get_venue_summary_tool,
     get_tournament_summary_tool,
-    get_powerplay_stats_tool,
     get_player_vs_team_tool,
     get_phase_wise_performance_tool,
     get_playoff_performance_tool,
