@@ -1,143 +1,106 @@
-🏏 IPL GenAI Assistant
+# 🏏 GenAI IPL App
 
-📌 Project Introduction
+## 📌 Project Introduction
 
-Traditional cricket websites provide rich statistics about leagues and matches, but lack a chat-based Q&A system.
-For example, users cannot directly ask:
-👉 “Who scored the fastest fifty at Wankhede in 2016?”
-👉 “Compare Rohit Sharma and Virat Kohli in powerplays during 2017.”
-👉 “Which bowler dismissed Dhoni most often in playoffs?”
+Traditional cricket websites provide rich statistics about leagues and matches, but lack a chat-based Q&A system.  
+With **GenAI IPL App**, users can ask natural questions like:  
+👉 *“Who scored the fastest fifty at Wankhede in 2016?”*  
+and get instant answers with **stats, graphs, and insights** powered by **LangChain + RAG + LLMs**.
 
-This project bridges that gap by building a RAG-based GenAI application that combines:
+---
 
-📊 Manual Analysis Dashboards → Interactive tables & graphs for IPL stats
+## 🚀 Query Flow
 
-🤖 GenAI Chat Assistant → Natural language Q&A powered by LLM + RAG
+```mermaid
+flowchart TD
+    A[User Query] --> B[LangChain Agent]
+    B --> C{Is this query suitable for a function?}
+    C -->|Yes| D[Tool Calling → Structured Functions → Stats/Graphs]
+    C -->|No| E[RAG Retrieval → FAISS Vectorstore → Semantic Search]
+    D --> F[Combine + Answer]
+    E --> F[Combine + Answer]
+    F --> G[Streamlit UI → Chat + Graphs]
+```
 
-🔎 Features
-1️⃣ Manual Analysis Dashboards
+---
 
-Explore IPL history through structured, interactive analysis:
+## 📂 Final Folder Structure – GenAI IPL App
 
-📊 Overall IPL Analysis → Teams, winners, historical trends
-
-🏏 Team Analysis → Team-wise batting & bowling performance
-
-👥 Player Summary → Career details with tables + graphs
-
-⚔️ Player vs Bowler → Head-to-head records
-
-🆚 Team vs Team → Comparative match history
-
-🏆 Leaderboards → Season-wise top performers
-
-🏟️ Venue Analysis → Matches, runs, wickets, 4s/6s by venue
-
-🔄 Player Comparison → Compare two players side by side
-
-🎯 Tournament Summary → Champions, orange/purple caps
-
-👉 These are deterministic, structured functions ensuring accuracy.
-
-2️⃣ GenAI Chat Assistant
-
-A conversational agent that answers simple, tricky, and complex IPL queries.
-
-✅ Structured queries → answered using Python functions/tools
-
-✅ Unstructured queries → answered using RAG over 15 curated CSVs
-
-⚙️ Tech Stack & Architecture
-
-LLM & Embeddings → OpenAI GPT + text-embedding-3-large
-
-Framework → LangChain (tool routing + RAG pipeline)
-
-Database → FAISS (vector store for embeddings)
-
-Frontend/UI → Streamlit
-
-Backend Logic → Python tools for structured stats queries
-
-Query Flow
-User Query
-   ↓
-LangChain Agent
-   ↓
-╔══════════════════════════════════════╗
-║ Is this query suitable for a function? ║
-╚══════════════════════════════════════╝
-   ↓ Yes                          ↓ No
-[Tool Calling]                 [RAG Retrieval]
-  → Structured functions         → FAISS vectorstore
-     (stats/graphs)                 (semantic search)
-         ↓                              ↓
-     Combine + Answer            Combine + Answer
-                ↓
-      Streamlit UI (chat + graphs)
-
-⚡ Setup & Installation
-# Clone repo
-git clone <your-repo-url>
-cd ipl_genai_app
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run Streamlit app
-streamlit run final_app.py
-
-💬 Example Queries
-
-Try asking:
-
-“Who hit the most sixes at Eden Gardens in 2018?”
-
-“Compare Kohli vs Rohit in powerplays.”
-
-“Which team won the most playoffs at Wankhede?”
-
-“Show me Dhoni’s boundary stats in 2012.”
-
-🚀 Future Enhancements
-
-⚡ Add FastAPI backend for production APIs
-
-📱 Deploy as web + mobile app
-
-📊 Expand dataset with live IPL feeds for real-time insights
-
-📂 Final Folder Structure – GenAI IPL App
+```plaintext
 ipl_genai_app/
 ├── Chatbot/
-│   ├── llm.py                    # Load OpenAI model
-│   ├── agent.py                  # LangChain agent setup (tools + RAG)
-│   ├── tools.py                  # Tool wrappers (calls your IPL functions)
-│   └── gen_chat.py               # Chat interface where users ask queries
+│   ├── llm.py                 # Load OpenAI model
+│   ├── agent.py               # LangChain agent setup (tools + RAG)
+│   ├── tools.py               # Tool wrappers (calls your IPL functions)
+│   └── gen_chat.py            # Chat interface where users ask queries
 │
-├── requirements.txt              # 📦 Dependencies
+├── requirements.txt           # 📦 Dependencies
 │
 ├── ipl_dataset/
-│   ├── final_ipl.csv             # 🔢 Main IPL dataset
-│   ├── player_info.csv           # 👤 Player profile data
-│   ├── vectorstore/              # FAISS embeddings DB
-│   └── rag_knowledgebase/        # CSVs for RAG (15 curated datasets)
+│   ├── final_ipl.csv          # 🔢 Main IPL dataset
+│   ├── player_info.csv        # 👤 Player profile data
+│   ├── vectorstore/           # FAISS embeddings DB
+│   └── rag_knowledgebase/     # CSVs for RAG (15 curated datasets)
 │
-├── ipl_player/                   # Player images
+├── ipl_player/                # Player images
 │
-├── RAG_helper/                   # Helpers for RAG pipelines
-│   ├── retriever.py              # CSV/text loader and retriever setup
-│   └── (other RAG helper scripts for stats, matches, venues, etc.)
+├── RAG_helper/                # Helpers for RAG pipelines
+│   ├── retriever.py           # CSV/text loader and retriever setup
+│   └── (other helper scripts for stats, matches, venues, etc.)
 │
-├── src/                          # 🔧 Core IPL business logic
-│   ├── functional_tool/          # Structured tool logic
+├── src/                       # 🔧 Core IPL business logic
+│   ├── functional_tool/       # Structured tool logic
 │   ├── player_summary.py
 │   ├── team_vs_team.py
 │   ├── venue_analysis.py
 │   ├── overview.py
 │   ├── tournament_summary.py
-│   └── utils.py                  # Shared utilities
+│   └── utils.py               # Shared utilities
 │
-├── venue_images/                 # Venue thumbnails
+├── venue_images/              # Venue thumbnails
 │
-└── final_app.py                  # Final Streamlit app entrypoint
+└── final_app.py               # Final Streamlit app entrypoint
+```
+
+---
+
+## ⚙️ Installation & Setup
+
+1. Clone the repository:  
+   ```bash
+   git clone https://github.com/your-username/genai-ipl-app.git
+   cd genai-ipl-app/ipl_genai_app
+   ```
+
+2. Install dependencies:  
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Run the Streamlit app:  
+   ```bash
+   streamlit run final_app.py
+   ```
+
+---
+
+## 🎯 Features
+
+- ✅ Chat-based Q&A over IPL stats & matches  
+- ✅ Combines **structured tools + RAG retrieval**  
+- ✅ Rich visualizations (graphs, stats tables, player analysis)  
+- ✅ Powered by **LangChain + FAISS + OpenAI**  
+
+---
+
+## 📊 Example Queries
+
+- *"Who has the best strike rate at Chinnaswamy Stadium?"*  
+- *"Show me Rohit Sharma’s career summary"*  
+- *"Which team won most matches in 2019?"*  
+
+---
+
+## 🙌 Contribution
+
+Feel free to fork, raise issues, and submit PRs to improve the app 🚀  
