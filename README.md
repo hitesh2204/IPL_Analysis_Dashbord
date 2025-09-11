@@ -2,10 +2,67 @@
 
 ## 📌 Project Introduction
 
-Traditional cricket websites provide rich statistics about leagues and matches, but lack a chat-based Q&A system.  
-With **GenAI IPL App**, users can ask natural questions like:  
+Traditional cricket websites provide rich statistics about leagues and matches, but they lack an interactive **chat-based Q&A system**.  
+For example, users cannot directly ask:  
 👉 *“Who scored the fastest fifty at Wankhede in 2016?”*  
-and get instant answers with **stats, graphs, and insights** powered by **LangChain + RAG + LLMs**.
+
+This project fills that gap by building a **RAG-based GenAI application** that combines:
+
+- **Manual Analysis Dashboards** → Interactive tables & graphs for IPL stats.  
+- **GenAI Chat Assistant** → Natural language Q&A powered by LLM + RAG.
+
+---
+
+## 🔎 Features
+
+### 1️⃣ Manual Analysis Dashboards
+Users can explore IPL history through structured, interactive analysis:
+
+- 📊 **Overall IPL Analysis** → Teams, winners, historical trends  
+- 🏏 **Team Analysis** → Player-wise batting & bowling breakdowns  
+- 👥 **Player Summary** → Career stats in tables & graphs  
+- ⚔️ **Player vs Bowler** → Head-to-head records  
+- 🆚 **Team vs Team** → Comparative match history  
+- 🏆 **Leaderboards** → Top performers by season  
+- 🏟️ **Venue Analysis** → Matches, 4s/6s, top performers  
+- 🔄 **Player Comparison** → Compare two players’ stats  
+- 🎯 **Tournament Summary** → Champions, top batsmen & bowlers  
+
+👉 These are **deterministic, structured functions** ensuring accuracy.
+
+---
+
+### 2️⃣ GenAI Chat Assistant
+
+A conversational agent that answers **simple, tricky, and complex IPL queries**.
+
+#### 🔹 Hybrid Design
+- ✅ **Structured queries** → Handled by Python functions (e.g., player summary, venue analysis).  
+- ✅ **Unstructured queries** → Handled by **RAG** over curated CSVs.  
+
+#### 🔹 Data Preparation
+- Extracted IPL dataset from Kaggle.  
+- Created **15 specialized CSVs** (batting stats, bowling stats, partnerships, playoffs, venues, etc.).  
+- Generated embeddings using **OpenAI `text-embedding-3-large`**.  
+- Stored embeddings in **FAISS vector database** for semantic retrieval.  
+
+#### 🔹 Query Flow
+1. User enters query → *“How many sixes did Rohit Sharma hit in 2017?”*  
+2. Tool Router decides:
+   - Structured → Use Python function.  
+   - Unstructured → Use RAG.  
+3. Selected tool executes → sends result to LLM → generates answer.  
+4. Response displayed in chatbot UI.  
+
+---
+
+## ⚙️ Tech Stack & Architecture
+
+- **LLM & Embeddings** → OpenAI GPT models (`text-embedding-3-large`)  
+- **Framework** → LangChain (tool routing, RAG pipeline)  
+- **Database** → FAISS (vector store for embeddings)  
+- **Frontend/UI** → Streamlit  
+- **Backend Logic** → Python tools for structured queries  
 
 ---
 
@@ -68,8 +125,7 @@ ipl_genai_app/
 
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/your-username/genai-ipl-app.git
-   cd genai-ipl-app/ipl_genai_app
+   git clone https://github.com/hitesh2204/IPL_Analysis_Dashbord.git
    ```
 
 2. Install dependencies:  
@@ -81,7 +137,6 @@ ipl_genai_app/
    ```bash
    streamlit run final_app.py
    ```
-
 ---
 
 ## 🎯 Features
