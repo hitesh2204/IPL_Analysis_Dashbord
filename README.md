@@ -156,6 +156,4 @@ ipl_genai_app/
 
 ---
 
-## 🙌 Contribution
 
-Feel free to fork, raise issues, and submit PRs to improve the app 🚀  
