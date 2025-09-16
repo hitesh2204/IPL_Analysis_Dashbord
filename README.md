@@ -12,6 +12,8 @@ This project fills that gap by building a **RAG-based GenAI application** that c
 - **GenAI Chat Assistant** → Natural language Q&A powered by LLM + RAG.
 
 ---
+## 📺 Demo Video
+🎥 Watch the working demo here: [YouTube Link](https://www.youtube.com/watch?v=tatqkjaBtRQ) 
 
 ## 🔎 Features
 
@@ -155,5 +157,4 @@ ipl_genai_app/
 - *"Which team won most matches in 2019?"*  
 
 ---
-
 
